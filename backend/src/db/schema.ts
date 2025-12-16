@@ -31,7 +31,6 @@ export const users = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     email: varchar("email", { length: 255 }).notNull(),
-    name: varchar("name", { length: 100 }),
     googleId: varchar("google_id", { length: 255 }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -48,6 +47,7 @@ export const players = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 100 }).notNull(),
     level: integer("level").default(1).notNull(),
     coins: integer("coins").default(0).notNull(),
     vipExpiresAt: timestamp("vip_expires_at", { withTimezone: true }),
@@ -55,6 +55,7 @@ export const players = pgTable(
   },
   (table) => [
     uniqueIndex("players_user_id_unique").on(table.userId),
+    uniqueIndex("players_name_unique").on(table.name),
   ],
 );
 
