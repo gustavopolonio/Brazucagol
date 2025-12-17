@@ -10,7 +10,7 @@
 ## Technologies
 - Frontend: Next.js (client-side only), Zustand, shadcn/ui with Tailwind, WebSocket.
 - Backend is Node.js with Fastify, PostgreSQL with Redis for real-time data, Drizzle as ORM.
-- Authentication handled by NextAuth
+- Authentication handled by Better Auth
 
 ## Player Model
 - A player represents the in-game character
