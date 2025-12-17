@@ -8,6 +8,8 @@ import {
   text,
   uniqueIndex,
   check,
+  boolean,
+  index,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -30,13 +32,87 @@ export const users = pgTable(
   "users",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
     email: varchar("email", { length: 255 }).notNull(),
-    googleId: varchar("google_id", { length: 255 }),
+    emailVerified: boolean("email_verified").default(false).notNull(),
+    image: text("image"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
   },
   (table) => [
     uniqueIndex("users_email_unique").on(table.email),
-    uniqueIndex("users_google_id_unique").on(table.googleId),
+  ],
+);
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    token: text("token").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    uniqueIndex("session_token_unique").on(table.token),
+    index("session_user_id_idx").on(table.userId),
+  ],
+);
+
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("account_user_id_idx").on(table.userId),
+    uniqueIndex("account_provider_unique").on(table.providerId, table.accountId),
+  ],
+);
+
+export const verifications = pgTable(
+  "verifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("verification_identifier_idx").on(table.identifier),
   ],
 );
 
@@ -65,7 +141,7 @@ export const levels = pgTable("levels", {
   iconUrl: text("icon_url").notNull(),
   requiredTotalGoals: integer("required_total_goals").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
 });
 
 export const seasons = pgTable("seasons", {
@@ -220,7 +296,7 @@ export const playerRoundStats = pgTable("player_round_stats", {
   freeKickGoal: integer("free_kick_goal").default(0).notNull(),
   trailGoal: integer("trail_goal").default(0).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
 });
 
 export const playerTotalStats = pgTable("player_total_stats", {
@@ -236,13 +312,21 @@ export const playerTotalStats = pgTable("player_total_stats", {
   trailGoal: integer("trail_goal").default(0).notNull(),
   trailAttempts: integer("trail_attempts").default(0).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
 });
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Player = typeof players.$inferSelect;
 export type NewPlayer = typeof players.$inferInsert;
+export type AuthUser = typeof users.$inferSelect;
+export type NewAuthUser = typeof users.$inferInsert;
+export type AuthSession = typeof sessions.$inferSelect;
+export type NewAuthSession = typeof sessions.$inferInsert;
+export type AuthAccount = typeof accounts.$inferSelect;
+export type NewAuthAccount = typeof accounts.$inferInsert;
+export type AuthVerification = typeof verifications.$inferSelect;
+export type NewAuthVerification = typeof verifications.$inferInsert;
 export type Level = typeof levels.$inferSelect;
 export type NewLevel = typeof levels.$inferInsert;
 export type Season = typeof seasons.$inferSelect;
@@ -267,3 +351,10 @@ export type PlayerRoundStat = typeof playerRoundStats.$inferSelect;
 export type NewPlayerRoundStat = typeof playerRoundStats.$inferInsert;
 export type PlayerTotalStat = typeof playerTotalStats.$inferSelect;
 export type NewPlayerTotalStat = typeof playerTotalStats.$inferInsert;
+
+export const schema = {
+  users,
+  accounts,
+  sessions,
+  verifications,
+};
