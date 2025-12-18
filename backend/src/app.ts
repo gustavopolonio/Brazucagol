@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import fastifyCors from "@fastify/cors";
+import { ZodError } from 'zod';
 import { env } from "./env";
 import { auth } from './lib/auth';
 
@@ -18,6 +19,25 @@ fastify.register(fastifyCors, {
   ],
   credentials: true,
   maxAge: 86400
+});
+
+// Error 500 handler
+fastify.setErrorHandler((error, _, reply) => {
+  if (error instanceof ZodError) {
+    return reply.status(400).send({
+      error: "ValidationError",
+      message: "Invalid request data",
+      issues: error.issues.map(issue => ({
+        path: issue.path.join("."),
+        message: issue.message,
+      })),
+    });
+  }
+
+  return reply.status(500).send({
+    error: "InternalServerError",
+    message: "Unexpected error",
+  });
 });
 
 // Register authentication endpoint
