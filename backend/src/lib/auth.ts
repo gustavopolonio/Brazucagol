@@ -5,6 +5,15 @@ import { env } from "@/env";
 import { schema } from "@/db/schema";
 
 export const auth = betterAuth({
+  user: {
+    additionalFields: {
+      hasPlayer: {
+        type: 'boolean',
+        required: true,
+        defaultValue: false,
+      }
+    }
+  },
   trustedOrigins: [env.CLIENT_URL],
   database: drizzleAdapter(db, {
     provider: "pg",

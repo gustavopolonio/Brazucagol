@@ -36,6 +36,7 @@ export const users = pgTable(
     email: varchar("email", { length: 255 }).notNull(),
     emailVerified: boolean("email_verified").default(false).notNull(),
     image: text("image"),
+    hasPlayer: boolean("has_player").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
