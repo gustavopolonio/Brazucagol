@@ -195,6 +195,8 @@ export const clubs = pgTable(
     stadium: varchar("stadium", { length: 100 }),
     region: varchar("region", { length: 100 }),
     logoUrl: varchar("logo_url", { length: 255 }),
+    primaryColor: text("primary_color").notNull(),
+    secondaryColor: text("secondary_color").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
