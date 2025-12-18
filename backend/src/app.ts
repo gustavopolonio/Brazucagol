@@ -3,6 +3,8 @@ import fastifyCors from "@fastify/cors";
 import { ZodError } from 'zod';
 import { env } from "./env";
 import { auth } from './lib/auth';
+import { playersRoutes } from "./routes/players";
+import { authMiddleware } from './middlewares/authMiddleware';
 
 const fastify = Fastify({
   logger: true
@@ -20,6 +22,14 @@ fastify.register(fastifyCors, {
   credentials: true,
   maxAge: 86400
 });
+
+// Non protected routes
+
+// Auth middlewares
+fastify.addHook('onRequest', authMiddleware);
+
+// Protected routes
+fastify.register(playersRoutes);
 
 // Error 500 handler
 fastify.setErrorHandler((error, _, reply) => {
