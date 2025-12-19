@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { FastifyInstance } from "fastify";
 import { db } from "@/lib/drizzle";
 import { clubs, clubMembers, players, users } from "@/db/schema";
@@ -21,7 +21,10 @@ export const playersRoutes = async (fastify: FastifyInstance) => {
     try {
       const [existingPlayerByName, club] = await Promise.all([
         db.query.players.findFirst({
-          where: eq(players.name, playerName)
+          where: and(
+            eq(players.name, playerName),
+            isNull(players.deletedAt)
+          )
         }),
         db.query.clubs.findFirst({
           where: eq(clubs.id, clubId)
