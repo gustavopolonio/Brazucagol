@@ -141,7 +141,7 @@ export const players = pgTable(
 );
 
 export const levels = pgTable("levels", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   title: text("title").notNull(),
   iconUrl: text("icon_url").notNull(),
   requiredTotalGoals: integer("required_total_goals").notNull(),
@@ -269,12 +269,16 @@ export const clubMembers = pgTable(
       .references(() => clubs.id, { onDelete: "cascade" }),
     role: clubRoleEnum("role").default("player").notNull(),
     joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
+    leftAt: timestamp("left_at", { withTimezone: true }),
   },
   (table) => [
     uniqueIndex("club_members_club_player_unique").on(
       table.clubId,
       table.playerId,
     ),
+    uniqueIndex("club_members_player_active_unique")
+      .on(table.playerId)
+      .where(isNull(table.leftAt)),
   ],
 );
 
