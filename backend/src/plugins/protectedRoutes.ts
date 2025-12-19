@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { playersRoutes } from "@/routes/players";
+import { protectedPlayersRoutes } from "@/routes/players";
 import { usersRoutes } from "@/routes/users";
 import { FastifyInstance } from "fastify";
 
@@ -26,6 +26,6 @@ export async function protectedRoutes(fastify: FastifyInstance) {
     request.authSession = session;
   });
 
-  fastify.register(playersRoutes);
+  fastify.register(protectedPlayersRoutes);
   fastify.register(usersRoutes);
 }

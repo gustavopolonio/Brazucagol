@@ -4,6 +4,7 @@ import { ZodError } from 'zod';
 import { env } from "./env";
 import { protectedRoutes } from './plugins/protectedRoutes';
 import { authRoutes } from './routes/auth';
+import { publicPlayersRoutes } from './routes/players';
 
 const fastify = Fastify({
   logger: true
@@ -24,6 +25,7 @@ fastify.register(fastifyCors, {
 
 // Non protected routes
 fastify.register(authRoutes);
+fastify.register(publicPlayersRoutes);
 
 // Protected routes
 fastify.register(protectedRoutes);
