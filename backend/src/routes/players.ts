@@ -152,15 +152,23 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
           })
           .returning();
 
-        await tx.insert(clubMembers).values({
-          clubId,
-          playerId: createdPlayer.id
-        });
+        await tx
+          .insert(clubMembers)
+          .values({
+            clubId,
+            playerId: createdPlayer.id
+          });
 
         await tx
           .update(users)
           .set({ hasPlayer: true })
           .where(eq(users.id, session.user.id));
+
+        await tx
+          .insert(playerTotalStats)
+          .values({
+            playerId: createdPlayer.id,
+          });
 
         return createdPlayer;
       });
