@@ -106,6 +106,13 @@
       "when": 1766064779838,
       "tag": "0014_add-user-player-flag",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1766091165339,
+      "tag": "0015_add-soft-delete-users-players",
+      "breakpoints": true
     }
   ]
 }

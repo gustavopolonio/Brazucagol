@@ -37,6 +37,7 @@ export const users = pgTable(
     emailVerified: boolean("email_verified").default(false).notNull(),
     image: text("image"),
     hasPlayer: boolean("has_player").default(false).notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
@@ -128,6 +129,7 @@ export const players = pgTable(
     level: integer("level").default(1).notNull(),
     coins: integer("coins").default(0).notNull(),
     vipExpiresAt: timestamp("vip_expires_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
