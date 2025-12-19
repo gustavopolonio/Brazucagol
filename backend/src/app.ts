@@ -5,6 +5,7 @@ import { env } from "./env";
 import { protectedRoutes } from './plugins/protectedRoutes';
 import { authRoutes } from './routes/auth';
 import { publicPlayersRoutes } from './routes/players';
+import { clubsRoutes } from './routes/clubs';
 
 const fastify = Fastify({
   logger: true
@@ -26,6 +27,7 @@ fastify.register(fastifyCors, {
 // Non protected routes
 fastify.register(authRoutes);
 fastify.register(publicPlayersRoutes);
+fastify.register(clubsRoutes);
 
 // Protected routes
 fastify.register(protectedRoutes);
