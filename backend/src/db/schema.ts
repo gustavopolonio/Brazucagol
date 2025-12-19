@@ -11,7 +11,7 @@ import {
   boolean,
   index,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { isNull, sql } from "drizzle-orm";
 
 export const matchTypeEnum = pgEnum("match_type", ["league", "cup", "friendly"]);
 export const matchStatusEnum = pgEnum("match_status", [
@@ -134,7 +134,9 @@ export const players = pgTable(
   },
   (table) => [
     uniqueIndex("players_user_id_unique").on(table.userId),
-    uniqueIndex("players_name_unique").on(table.name),
+    uniqueIndex("players_name_unique")
+      .on(table.name)
+      .where(isNull(table.deletedAt)),
   ],
 );
 
