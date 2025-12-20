@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 import { FastifyInstance } from "fastify";
 import { db } from "@/lib/drizzle";
 import { clubs, clubMembers, levels, playerTotalStats, players, users } from "@/db/schema";
@@ -179,6 +179,59 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
       });
     } catch (error) {
       request.log.error(error, "Failed to create player");
+      throw new Error(error);
+    }
+  });
+
+  fastify.patch('/players/:playerId', async (request, reply) => {
+    const paramsSchema = z.object({
+      playerId: z.uuid(),
+    });
+
+    const bodySchema = z.object({
+      playerName: z.string().trim().min(3).max(100),
+    });
+
+    const { playerId } = paramsSchema.parse(request.params);
+    const { playerName } = bodySchema.parse(request.body);
+    const session = request.authSession!;
+
+    try {
+      const player = await db.query.players.findFirst({
+        where: and(
+          eq(players.id, playerId),
+          eq(players.userId, session.user.id),
+          isNull(players.deletedAt)
+        )
+      });
+
+      if (!player) {
+        return reply.status(404).send({ error: "Player not found." });
+      }
+
+      const nameAlreadyExists = await db.query.players.findFirst({
+        where: and(
+          eq(players.name, playerName),
+          isNull(players.deletedAt),
+          ne(players.id, playerId)
+        )
+      });
+
+      if (nameAlreadyExists) {
+        return reply.status(409).send({ error: "Player name already taken." });
+      }
+
+      // TODO: only let update name with some item from store
+
+      const [updatedPlayer] = await db
+        .update(players)
+        .set({ name: playerName })
+        .where(eq(players.id, playerId))
+        .returning();
+
+      return reply.status(200).send({ player: updatedPlayer });
+    } catch (error) {
+      request.log.error(error, "Failed to update player");
       throw new Error(error);
     }
   });
