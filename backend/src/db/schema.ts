@@ -10,6 +10,7 @@ import {
   check,
   boolean,
   index,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 import { isNull, sql } from "drizzle-orm";
 
@@ -151,7 +152,7 @@ export const levels = pgTable("levels", {
 
 export const seasons = pgTable("seasons", {
   id: uuid("id").defaultRandom().primaryKey(),
-  name: varchar("name", { length: 50 }),
+  name: varchar("name", { length: 50 }).notNull(),
   startsAt: timestamp("starts_at", { withTimezone: true }),
   endsAt: timestamp("ends_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -159,7 +160,7 @@ export const seasons = pgTable("seasons", {
 
 export const competitions = pgTable("competitions", {
   id: uuid("id").defaultRandom().primaryKey(),
-  seasonId: uuid("season_id").references(() => seasons.id, { onDelete: "cascade" }),
+  seasonId: uuid("season_id").references(() => seasons.id, { onDelete: "cascade" }).notNull(),
   type: competitionTypeEnum("type").notNull(),
   name: varchar("name", { length: 100 }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -173,7 +174,7 @@ export const leagueDivisions = pgTable(
       .notNull()
       .references(() => competitions.id, { onDelete: "cascade" }),
     divisionNumber: integer("division_number").notNull(),
-    name: varchar("name", { length: 50 }),
+    name: varchar("name", { length: 50 }).notNull(),
   },
   (table) => [
     check(
@@ -187,10 +188,21 @@ export const leagueDivisions = pgTable(
   ],
 );
 
-export const cupRounds = pgTable("cup_rounds", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  name: varchar("name", { length: 100 }).notNull(),
-});
+export const cupRounds = pgTable(
+  "cup_rounds",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: varchar("name", { length: 100 }).notNull(),
+    stage: integer("stage").notNull(), // 0 -> Final; 1 -> Semi final ...
+    totalClubs: integer("total_clubs").notNull(),
+  },
+  (table) => [
+    uniqueIndex("cup_rounds_stage_unique").on(
+      table.stage,
+    ),
+    uniqueIndex("cup_rounds_total_clubs_unique").on(table.totalClubs),
+  ],
+);
 
 export const clubs = pgTable(
   "clubs",
@@ -203,36 +215,57 @@ export const clubs = pgTable(
     primaryColor: text("primary_color").notNull(),
     secondaryColor: text("secondary_color").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
     uniqueIndex("clubs_name_unique").on(table.name),
   ],
 );
 
-export const matches = pgTable("matches", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  competitionId: uuid("competition_id")
-    .references(() => competitions.id, { onDelete: "cascade" }),
-  divisionId: uuid("division_id").references(() => leagueDivisions.id, {
-    onDelete: "set null",
-  }),
-  clubHomeId: uuid("club_home_id")
-    .notNull()
-    .references(() => clubs.id, { onDelete: "cascade" }),
-  clubAwayId: uuid("club_away_id")
-    .notNull()
-    .references(() => clubs.id, { onDelete: "cascade" }),
-  leagueRound: integer("league_round"),
-  cupRoundId: uuid("cup_round_id").references(() => cupRounds.id, {
-    onDelete: "set null",
-  }),
-  type: matchTypeEnum("type").notNull(),
-  status: matchStatusEnum("status").default("pending").notNull(),
-  homeGoals: integer("home_goals").default(0).notNull(),
-  awayGoals: integer("away_goals").default(0).notNull(),
-  date: timestamp("date", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const matches = pgTable(
+  "matches", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    competitionId: uuid("competition_id")
+      .references(() => competitions.id, { onDelete: "cascade" }),
+    divisionId: uuid("division_id").references(() => leagueDivisions.id, {
+      onDelete: "set null",
+    }), // League only
+    leagueRound: integer("league_round"), // League only
+
+    cupRoundId: uuid("cup_round_id").references(() => cupRounds.id, {
+      onDelete: "set null",
+    }), // Cup only
+
+    clubHomeId: uuid("club_home_id")
+      .references(() => clubs.id, { onDelete: "cascade" }),
+    clubAwayId: uuid("club_away_id")
+      .references(() => clubs.id, { onDelete: "cascade" }),
+
+    homeFromMatchId: uuid("home_from_match_id"), // Cup only (bracket)
+    awayFromMatchId: uuid("away_from_match_id"), // Cup only (bracket)
+
+    winnerClubId: uuid("winner_club_id")
+      .references(() => clubs.id),
+
+    type: matchTypeEnum("type").notNull(),
+    status: matchStatusEnum("status").default("pending").notNull(),
+
+    homeGoals: integer("home_goals").default(0).notNull(),
+    awayGoals: integer("away_goals").default(0).notNull(),
+    date: timestamp("date", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.homeFromMatchId],
+      foreignColumns: [table.id],
+    }),
+    foreignKey({
+      columns: [table.awayFromMatchId],
+      foreignColumns: [table.id],
+    }),
+  ]
+);
 
 export const competitionClubs = pgTable(
   "competition_clubs",

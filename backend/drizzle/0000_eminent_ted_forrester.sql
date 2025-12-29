@@ -43,7 +43,8 @@ CREATE TABLE "clubs" (
 	"logo_url" varchar(255),
 	"primary_color" text NOT NULL,
 	"secondary_color" text NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"deleted_at" timestamp with time zone
 );
 --> statement-breakpoint
 CREATE TABLE "competition_clubs" (
@@ -56,7 +57,7 @@ CREATE TABLE "competition_clubs" (
 --> statement-breakpoint
 CREATE TABLE "competitions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"season_id" uuid,
+	"season_id" uuid NOT NULL,
 	"type" "competition_type" NOT NULL,
 	"name" varchar(100) NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -64,14 +65,16 @@ CREATE TABLE "competitions" (
 --> statement-breakpoint
 CREATE TABLE "cup_rounds" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" varchar(100) NOT NULL
+	"name" varchar(100) NOT NULL,
+	"stage" integer NOT NULL,
+	"total_clubs" integer NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "league_divisions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"competition_id" uuid NOT NULL,
 	"division_number" integer NOT NULL,
-	"name" varchar(50),
+	"name" varchar(50) NOT NULL,
 	CONSTRAINT "league_divisions_division_number_check" CHECK ("league_divisions"."division_number" BETWEEN 1 AND 4)
 );
 --> statement-breakpoint
@@ -88,10 +91,13 @@ CREATE TABLE "matches" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"competition_id" uuid,
 	"division_id" uuid,
-	"club_home_id" uuid NOT NULL,
-	"club_away_id" uuid NOT NULL,
 	"league_round" integer,
 	"cup_round_id" uuid,
+	"club_home_id" uuid,
+	"club_away_id" uuid,
+	"home_from_match_id" uuid,
+	"away_from_match_id" uuid,
+	"winner_club_id" uuid,
 	"type" "match_type" NOT NULL,
 	"status" "match_status" DEFAULT 'pending' NOT NULL,
 	"home_goals" integer DEFAULT 0 NOT NULL,
@@ -139,7 +145,7 @@ CREATE TABLE "players" (
 --> statement-breakpoint
 CREATE TABLE "seasons" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" varchar(50),
+	"name" varchar(50) NOT NULL,
 	"starts_at" timestamp with time zone,
 	"ends_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -189,9 +195,12 @@ ALTER TABLE "competitions" ADD CONSTRAINT "competitions_season_id_seasons_id_fk"
 ALTER TABLE "league_divisions" ADD CONSTRAINT "league_divisions_competition_id_competitions_id_fk" FOREIGN KEY ("competition_id") REFERENCES "public"."competitions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "matches" ADD CONSTRAINT "matches_competition_id_competitions_id_fk" FOREIGN KEY ("competition_id") REFERENCES "public"."competitions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "matches" ADD CONSTRAINT "matches_division_id_league_divisions_id_fk" FOREIGN KEY ("division_id") REFERENCES "public"."league_divisions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "matches" ADD CONSTRAINT "matches_cup_round_id_cup_rounds_id_fk" FOREIGN KEY ("cup_round_id") REFERENCES "public"."cup_rounds"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "matches" ADD CONSTRAINT "matches_club_home_id_clubs_id_fk" FOREIGN KEY ("club_home_id") REFERENCES "public"."clubs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "matches" ADD CONSTRAINT "matches_club_away_id_clubs_id_fk" FOREIGN KEY ("club_away_id") REFERENCES "public"."clubs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "matches" ADD CONSTRAINT "matches_cup_round_id_cup_rounds_id_fk" FOREIGN KEY ("cup_round_id") REFERENCES "public"."cup_rounds"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "matches" ADD CONSTRAINT "matches_home_from_match_id_matches_id_fk" FOREIGN KEY ("home_from_match_id") REFERENCES "public"."matches"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "matches" ADD CONSTRAINT "matches_away_from_match_id_matches_id_fk" FOREIGN KEY ("away_from_match_id") REFERENCES "public"."matches"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "matches" ADD CONSTRAINT "matches_winner_club_id_clubs_id_fk" FOREIGN KEY ("winner_club_id") REFERENCES "public"."clubs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "player_round_stats" ADD CONSTRAINT "player_round_stats_player_id_players_id_fk" FOREIGN KEY ("player_id") REFERENCES "public"."players"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "player_round_stats" ADD CONSTRAINT "player_round_stats_match_id_matches_id_fk" FOREIGN KEY ("match_id") REFERENCES "public"."matches"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "player_total_stats" ADD CONSTRAINT "player_total_stats_player_id_players_id_fk" FOREIGN KEY ("player_id") REFERENCES "public"."players"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -203,6 +212,8 @@ CREATE UNIQUE INDEX "club_members_club_player_unique" ON "club_members" USING bt
 CREATE UNIQUE INDEX "club_members_player_active_unique" ON "club_members" USING btree ("player_id") WHERE "club_members"."left_at" is null;--> statement-breakpoint
 CREATE UNIQUE INDEX "clubs_name_unique" ON "clubs" USING btree ("name");--> statement-breakpoint
 CREATE UNIQUE INDEX "competition_clubs_competition_club_unique" ON "competition_clubs" USING btree ("competition_id","club_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "cup_rounds_stage_unique" ON "cup_rounds" USING btree ("stage");--> statement-breakpoint
+CREATE UNIQUE INDEX "cup_rounds_total_clubs_unique" ON "cup_rounds" USING btree ("total_clubs");--> statement-breakpoint
 CREATE UNIQUE INDEX "league_divisions_competition_division_unique" ON "league_divisions" USING btree ("competition_id","division_number");--> statement-breakpoint
 CREATE UNIQUE INDEX "players_user_id_unique" ON "players" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "players_name_unique" ON "players" USING btree ("name") WHERE "players"."deleted_at" is null;--> statement-breakpoint

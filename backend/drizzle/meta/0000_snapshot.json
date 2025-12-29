@@ -1,5 +1,5 @@
 {
-  "id": "b393e267-8edc-403f-a0fe-f3ae04239b50",
+  "id": "2f08ae86-503b-4fa8-ad85-811f47ad0cd4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -392,6 +392,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -540,7 +546,7 @@
           "name": "season_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "type": {
           "name": "type",
@@ -601,9 +607,52 @@
           "type": "varchar(100)",
           "primaryKey": false,
           "notNull": true
+        },
+        "stage": {
+          "name": "stage",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_clubs": {
+          "name": "total_clubs",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
         }
       },
-      "indexes": {},
+      "indexes": {
+        "cup_rounds_stage_unique": {
+          "name": "cup_rounds_stage_unique",
+          "columns": [
+            {
+              "expression": "stage",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "cup_rounds_total_clubs_unique": {
+          "name": "cup_rounds_total_clubs_unique",
+          "columns": [
+            {
+              "expression": "total_clubs",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -638,7 +687,7 @@
           "name": "name",
           "type": "varchar(50)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         }
       },
       "indexes": {
@@ -775,18 +824,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "club_home_id": {
-          "name": "club_home_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "club_away_id": {
-          "name": "club_away_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "league_round": {
           "name": "league_round",
           "type": "integer",
@@ -795,6 +832,36 @@
         },
         "cup_round_id": {
           "name": "cup_round_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "club_home_id": {
+          "name": "club_home_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "club_away_id": {
+          "name": "club_away_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "home_from_match_id": {
+          "name": "home_from_match_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "away_from_match_id": {
+          "name": "away_from_match_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "winner_club_id": {
+          "name": "winner_club_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
@@ -870,6 +937,19 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
+        "matches_cup_round_id_cup_rounds_id_fk": {
+          "name": "matches_cup_round_id_cup_rounds_id_fk",
+          "tableFrom": "matches",
+          "tableTo": "cup_rounds",
+          "columnsFrom": [
+            "cup_round_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
         "matches_club_home_id_clubs_id_fk": {
           "name": "matches_club_home_id_clubs_id_fk",
           "tableFrom": "matches",
@@ -896,17 +976,43 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "matches_cup_round_id_cup_rounds_id_fk": {
-          "name": "matches_cup_round_id_cup_rounds_id_fk",
+        "matches_home_from_match_id_matches_id_fk": {
+          "name": "matches_home_from_match_id_matches_id_fk",
           "tableFrom": "matches",
-          "tableTo": "cup_rounds",
+          "tableTo": "matches",
           "columnsFrom": [
-            "cup_round_id"
+            "home_from_match_id"
           ],
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "matches_away_from_match_id_matches_id_fk": {
+          "name": "matches_away_from_match_id_matches_id_fk",
+          "tableFrom": "matches",
+          "tableTo": "matches",
+          "columnsFrom": [
+            "away_from_match_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "matches_winner_club_id_clubs_id_fk": {
+          "name": "matches_winner_club_id_clubs_id_fk",
+          "tableFrom": "matches",
+          "tableTo": "clubs",
+          "columnsFrom": [
+            "winner_club_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -1246,7 +1352,7 @@
           "name": "name",
           "type": "varchar(50)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "starts_at": {
           "name": "starts_at",
