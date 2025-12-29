@@ -3,10 +3,10 @@ import { Transaction } from "@/lib/drizzle";
 import { competitions, seasons } from "@/db/schema";
 
 interface CreateCompetitionProps {
-  db: Transaction,
-  seasonId: string,
-  competitionName: string,
-  competitionType: typeof competitions.$inferInsert["type"],
+  db: Transaction;
+  seasonId: string;
+  competitionName: string;
+  competitionType: (typeof competitions.$inferInsert)["type"];
 }
 
 export async function createCompetition({
@@ -17,10 +17,7 @@ export async function createCompetition({
 }: CreateCompetitionProps) {
   console.log(`Creating ${competitionType} competition...`);
 
-  const [season] = await db
-    .select()
-    .from(seasons)
-    .where(eq(seasons.id, seasonId));
+  const [season] = await db.select().from(seasons).where(eq(seasons.id, seasonId));
 
   if (!season) throw new Error(`Season not found. Season id: ${seasonId}`);
 

@@ -8,27 +8,27 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       hasPlayer: {
-        type: 'boolean',
+        type: "boolean",
         required: true,
         defaultValue: false,
-      }
-    }
+      },
+    },
   },
   trustedOrigins: [env.CLIENT_URL],
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
-    usePlural: true
+    usePlural: true,
   }),
   advanced: {
     database: {
-      generateId: 'uuid',
+      generateId: "uuid",
     },
   },
   socialProviders: {
     google: {
       clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET
-    }
-  }
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    },
+  },
 });

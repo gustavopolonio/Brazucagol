@@ -1,27 +1,23 @@
-import Fastify from 'fastify';
+import Fastify from "fastify";
 import fastifyCors from "@fastify/cors";
-import { ZodError } from 'zod';
+import { ZodError } from "zod";
 import { env } from "./env";
-import { protectedRoutes } from './plugins/protectedRoutes';
-import { authRoutes } from './routes/auth';
-import { publicPlayersRoutes } from './routes/players';
-import { clubsRoutes } from './routes/clubs';
+import { protectedRoutes } from "./plugins/protectedRoutes";
+import { authRoutes } from "./routes/auth";
+import { publicPlayersRoutes } from "./routes/players";
+import { clubsRoutes } from "./routes/clubs";
 
 const fastify = Fastify({
-  logger: true
+  logger: true,
 });
 
 // Configure CORS policies
 fastify.register(fastifyCors, {
   origin: env.CLIENT_URL,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With"
-  ],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   credentials: true,
-  maxAge: 86400
+  maxAge: 86400,
 });
 
 // Non protected routes
@@ -38,7 +34,7 @@ fastify.setErrorHandler((error, _, reply) => {
     return reply.status(400).send({
       error: "ValidationError",
       message: "Invalid request data",
-      issues: error.issues.map(issue => ({
+      issues: error.issues.map((issue) => ({
         path: issue.path.join("."),
         message: issue.message,
       })),

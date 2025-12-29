@@ -1,5 +1,5 @@
-import 'fastify';
-import type { auth } from '../src/lib/auth';
+import "fastify";
+import type { auth } from "../src/lib/auth";
 
 type AuthSession = Awaited<ReturnType<typeof auth.api.getSession>>;
 

@@ -9,6 +9,8 @@
     "build": "tsc && tsc-alias",
     "start": "node --env-file .env dist/src/app.js",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prettier:format": "prettier --write .",
     "seed:clubs": "tsx --env-file .env src/scripts/seed-clubs.ts",
     "seed:cup-rounds": "tsx --env-file .env src/scripts/seed-cup-rounds.ts",
     "bootstrap-league": "tsx --env-file .env src/scripts/bootstrap-league.ts",
@@ -34,6 +36,9 @@
     "@typescript-eslint/parser": "^8.50.0",
     "drizzle-kit": "^0.31.8",
     "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.7.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

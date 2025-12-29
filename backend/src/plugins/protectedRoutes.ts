@@ -5,7 +5,7 @@ import { FastifyInstance } from "fastify";
 
 export async function protectedRoutes(fastify: FastifyInstance) {
   // Auth middleware
-  fastify.addHook('onRequest', async (request, reply) => {
+  fastify.addHook("onRequest", async (request, reply) => {
     const headers = new Headers();
     Object.entries(request.headers).forEach(([key, value]) => {
       if (Array.isArray(value)) {

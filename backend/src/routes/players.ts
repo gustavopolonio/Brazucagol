@@ -5,7 +5,7 @@ import { db } from "@/lib/drizzle";
 import { clubs, clubMembers, levels, playerTotalStats, players, users } from "@/db/schema";
 
 export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
-  fastify.get('/players', async (request, reply) => {
+  fastify.get("/players", async (request, reply) => {
     const getPlayerQuerySchema = z.object({
       playerName: z.string().trim().min(3).max(100),
     });
@@ -23,12 +23,7 @@ export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
         })
         .from(players)
         .leftJoin(levels, eq(players.level, levels.id))
-        .where(
-          and(
-            eq(players.name, playerName),
-            isNull(players.deletedAt)
-          )
-        )
+        .where(and(eq(players.name, playerName), isNull(players.deletedAt)))
         .limit(1);
 
       if (!player) {
@@ -66,12 +61,7 @@ export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
         })
         .from(clubMembers)
         .leftJoin(clubs, eq(clubMembers.clubId, clubs.id))
-        .where(
-          and(
-            eq(clubMembers.playerId, player.id),
-            isNull(clubMembers.leftAt)
-          )
-        )
+        .where(and(eq(clubMembers.playerId, player.id), isNull(clubMembers.leftAt)))
         .limit(1);
 
       if (!playerClub) {
@@ -92,13 +82,13 @@ export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
           freeKickGoal: playerStats.freeKickGoal,
           freeKickAttempts: playerStats.freeKickAttempts,
           trailGoal: playerStats.trailGoal,
-          trailAttempts: playerStats.trailAttempts
+          trailAttempts: playerStats.trailAttempts,
         },
         club: playerClub.clubName
           ? {
-            name: playerClub.clubName,
-            logoUrl: playerClub.clubLogoUrl,
-          }
+              name: playerClub.clubName,
+              logoUrl: playerClub.clubLogoUrl,
+            }
           : null,
       });
     } catch (error) {
@@ -109,10 +99,10 @@ export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
 };
 
 export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
-  fastify.post('/players', async (request, reply) => {
+  fastify.post("/players", async (request, reply) => {
     const createPlayerBodySchema = z.object({
       playerName: z.string().trim().min(3).max(100),
-      clubId: z.uuid()
+      clubId: z.uuid(),
     });
 
     const { playerName, clubId } = createPlayerBodySchema.parse(request.body);
@@ -125,14 +115,11 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
     try {
       const [existingPlayerByName, club] = await Promise.all([
         db.query.players.findFirst({
-          where: and(
-            eq(players.name, playerName),
-            isNull(players.deletedAt)
-          )
+          where: and(eq(players.name, playerName), isNull(players.deletedAt)),
         }),
         db.query.clubs.findFirst({
-          where: eq(clubs.id, clubId)
-        })
+          where: eq(clubs.id, clubId),
+        }),
       ]);
 
       if (existingPlayerByName) {
@@ -152,30 +139,23 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
           })
           .returning();
 
-        await tx
-          .insert(clubMembers)
-          .values({
-            clubId,
-            playerId: createdPlayer.id
-          });
+        await tx.insert(clubMembers).values({
+          clubId,
+          playerId: createdPlayer.id,
+        });
 
-        await tx
-          .update(users)
-          .set({ hasPlayer: true })
-          .where(eq(users.id, session.user.id));
+        await tx.update(users).set({ hasPlayer: true }).where(eq(users.id, session.user.id));
 
-        await tx
-          .insert(playerTotalStats)
-          .values({
-            playerId: createdPlayer.id,
-          });
+        await tx.insert(playerTotalStats).values({
+          playerId: createdPlayer.id,
+        });
 
         return createdPlayer;
       });
 
       return reply.status(201).send({
         player,
-        club
+        club,
       });
     } catch (error) {
       request.log.error(error, "Failed to create player");
@@ -183,7 +163,7 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
     }
   });
 
-  fastify.patch('/players/:playerId', async (request, reply) => {
+  fastify.patch("/players/:playerId", async (request, reply) => {
     const paramsSchema = z.object({
       playerId: z.uuid(),
     });
@@ -202,7 +182,7 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
           eq(players.id, playerId),
           eq(players.userId, session.user.id),
           isNull(players.deletedAt)
-        )
+        ),
       });
 
       if (!player) {
@@ -214,7 +194,7 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
           eq(players.name, playerName),
           isNull(players.deletedAt),
           ne(players.id, playerId)
-        )
+        ),
       });
 
       if (nameAlreadyExists) {

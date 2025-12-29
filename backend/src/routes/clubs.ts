@@ -5,7 +5,7 @@ import { db } from "@/lib/drizzle";
 import { clubMembers, clubs, levels, players } from "@/db/schema";
 
 export const clubsRoutes = async (fastify: FastifyInstance) => {
-  fastify.get('/clubs/:clubId/players', async (request, reply) => {
+  fastify.get("/clubs/:clubId/players", async (request, reply) => {
     const getClubPlayersParamsSchema = z.object({
       clubId: z.uuid(),
     });
@@ -14,7 +14,7 @@ export const clubsRoutes = async (fastify: FastifyInstance) => {
 
     try {
       const club = await db.query.clubs.findFirst({
-        where: eq(clubs.id, clubId)
+        where: eq(clubs.id, clubId),
       });
 
       if (!club) {
@@ -31,16 +31,12 @@ export const clubsRoutes = async (fastify: FastifyInstance) => {
         .innerJoin(players, eq(clubMembers.playerId, players.id))
         .leftJoin(levels, eq(players.level, levels.id))
         .where(
-          and(
-            eq(clubMembers.clubId, clubId),
-            isNull(clubMembers.leftAt),
-            isNull(players.deletedAt)
-          )
+          and(eq(clubMembers.clubId, clubId), isNull(clubMembers.leftAt), isNull(players.deletedAt))
         )
         .orderBy(desc(players.level));
 
       return reply.status(200).send({
-        players: clubPlayers
+        players: clubPlayers,
       });
     } catch (error) {
       request.log.error(error, "Failed to fetch club players");

@@ -2,7 +2,7 @@ import { db } from "@/lib/drizzle";
 import { seasons } from "@/db/schema";
 
 export async function createSeason(seasonName: string) {
-  console.log('Creating season...');
+  console.log("Creating season...");
 
   const [season] = await db
     .insert(seasons)

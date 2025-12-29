@@ -5,7 +5,7 @@ import { db } from "@/lib/drizzle";
 import { accounts, players, sessions, users } from "@/db/schema";
 
 export const usersRoutes = async (fastify: FastifyInstance) => {
-  fastify.delete('/users', async (request, reply) => {
+  fastify.delete("/users", async (request, reply) => {
     const session = request.authSession;
     const expectedPlayer = Boolean(session.user.hasPlayer);
 
@@ -19,7 +19,7 @@ export const usersRoutes = async (fastify: FastifyInstance) => {
           .set({
             email: scrubbedEmail,
             hasPlayer: false,
-            deletedAt: timeNow
+            deletedAt: timeNow,
           })
           .where(eq(users.id, session.user.id))
           .returning();

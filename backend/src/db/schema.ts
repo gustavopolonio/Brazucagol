@@ -15,11 +15,7 @@ import {
 import { isNull, sql } from "drizzle-orm";
 
 export const matchTypeEnum = pgEnum("match_type", ["league", "cup", "friendly"]);
-export const matchStatusEnum = pgEnum("match_status", [
-  "pending",
-  "in_progress",
-  "finished",
-]);
+export const matchStatusEnum = pgEnum("match_status", ["pending", "in_progress", "finished"]);
 export const clubRoleEnum = pgEnum("club_role", [
   "president",
   "vice_president",
@@ -45,9 +41,7 @@ export const users = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [
-    uniqueIndex("users_email_unique").on(table.email),
-  ],
+  (table) => [uniqueIndex("users_email_unique").on(table.email)]
 );
 
 export const sessions = pgTable(
@@ -70,7 +64,7 @@ export const sessions = pgTable(
   (table) => [
     uniqueIndex("session_token_unique").on(table.token),
     index("session_user_id_idx").on(table.userId),
-  ],
+  ]
 );
 
 export const accounts = pgTable(
@@ -98,7 +92,7 @@ export const accounts = pgTable(
   (table) => [
     index("account_user_id_idx").on(table.userId),
     uniqueIndex("account_provider_unique").on(table.providerId, table.accountId),
-  ],
+  ]
 );
 
 export const verifications = pgTable(
@@ -114,9 +108,7 @@ export const verifications = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [
-    index("verification_identifier_idx").on(table.identifier),
-  ],
+  (table) => [index("verification_identifier_idx").on(table.identifier)]
 );
 
 export const players = pgTable(
@@ -135,10 +127,8 @@ export const players = pgTable(
   },
   (table) => [
     uniqueIndex("players_user_id_unique").on(table.userId),
-    uniqueIndex("players_name_unique")
-      .on(table.name)
-      .where(isNull(table.deletedAt)),
-  ],
+    uniqueIndex("players_name_unique").on(table.name).where(isNull(table.deletedAt)),
+  ]
 );
 
 export const levels = pgTable("levels", {
@@ -147,7 +137,10 @@ export const levels = pgTable("levels", {
   iconUrl: text("icon_url").notNull(),
   requiredTotalGoals: integer("required_total_goals").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
 export const seasons = pgTable("seasons", {
@@ -160,7 +153,9 @@ export const seasons = pgTable("seasons", {
 
 export const competitions = pgTable("competitions", {
   id: uuid("id").defaultRandom().primaryKey(),
-  seasonId: uuid("season_id").references(() => seasons.id, { onDelete: "cascade" }).notNull(),
+  seasonId: uuid("season_id")
+    .references(() => seasons.id, { onDelete: "cascade" })
+    .notNull(),
   type: competitionTypeEnum("type").notNull(),
   name: varchar("name", { length: 100 }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -177,15 +172,12 @@ export const leagueDivisions = pgTable(
     name: varchar("name", { length: 50 }).notNull(),
   },
   (table) => [
-    check(
-      "league_divisions_division_number_check",
-      sql`${table.divisionNumber} BETWEEN 1 AND 4`,
-    ),
+    check("league_divisions_division_number_check", sql`${table.divisionNumber} BETWEEN 1 AND 4`),
     uniqueIndex("league_divisions_competition_division_unique").on(
       table.competitionId,
-      table.divisionNumber,
+      table.divisionNumber
     ),
-  ],
+  ]
 );
 
 export const cupRounds = pgTable(
@@ -197,11 +189,9 @@ export const cupRounds = pgTable(
     totalClubs: integer("total_clubs").notNull(),
   },
   (table) => [
-    uniqueIndex("cup_rounds_stage_unique").on(
-      table.stage,
-    ),
+    uniqueIndex("cup_rounds_stage_unique").on(table.stage),
     uniqueIndex("cup_rounds_total_clubs_unique").on(table.totalClubs),
-  ],
+  ]
 );
 
 export const clubs = pgTable(
@@ -217,16 +207,16 @@ export const clubs = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
-  (table) => [
-    uniqueIndex("clubs_name_unique").on(table.name),
-  ],
+  (table) => [uniqueIndex("clubs_name_unique").on(table.name)]
 );
 
 export const matches = pgTable(
-  "matches", {
+  "matches",
+  {
     id: uuid("id").defaultRandom().primaryKey(),
-    competitionId: uuid("competition_id")
-      .references(() => competitions.id, { onDelete: "cascade" }),
+    competitionId: uuid("competition_id").references(() => competitions.id, {
+      onDelete: "cascade",
+    }),
     divisionId: uuid("division_id").references(() => leagueDivisions.id, {
       onDelete: "set null",
     }), // League only
@@ -236,16 +226,13 @@ export const matches = pgTable(
       onDelete: "set null",
     }), // Cup only
 
-    clubHomeId: uuid("club_home_id")
-      .references(() => clubs.id, { onDelete: "cascade" }),
-    clubAwayId: uuid("club_away_id")
-      .references(() => clubs.id, { onDelete: "cascade" }),
+    clubHomeId: uuid("club_home_id").references(() => clubs.id, { onDelete: "cascade" }),
+    clubAwayId: uuid("club_away_id").references(() => clubs.id, { onDelete: "cascade" }),
 
     homeFromMatchId: uuid("home_from_match_id"), // Cup only (bracket)
     awayFromMatchId: uuid("away_from_match_id"), // Cup only (bracket)
 
-    winnerClubId: uuid("winner_club_id")
-      .references(() => clubs.id),
+    winnerClubId: uuid("winner_club_id").references(() => clubs.id),
 
     type: matchTypeEnum("type").notNull(),
     status: matchStatusEnum("status").default("pending").notNull(),
@@ -283,11 +270,8 @@ export const competitionClubs = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
-    uniqueIndex("competition_clubs_competition_club_unique").on(
-      table.competitionId,
-      table.clubId,
-    ),
-  ],
+    uniqueIndex("competition_clubs_competition_club_unique").on(table.competitionId, table.clubId),
+  ]
 );
 
 export const clubMembers = pgTable(
@@ -305,14 +289,9 @@ export const clubMembers = pgTable(
     leftAt: timestamp("left_at", { withTimezone: true }),
   },
   (table) => [
-    uniqueIndex("club_members_club_player_unique").on(
-      table.clubId,
-      table.playerId,
-    ),
-    uniqueIndex("club_members_player_active_unique")
-      .on(table.playerId)
-      .where(isNull(table.leftAt)),
-  ],
+    uniqueIndex("club_members_club_player_unique").on(table.clubId, table.playerId),
+    uniqueIndex("club_members_player_active_unique").on(table.playerId).where(isNull(table.leftAt)),
+  ]
 );
 
 export const clubChatMessages = pgTable("club_chat_messages", {
@@ -340,7 +319,10 @@ export const playerRoundStats = pgTable("player_round_stats", {
   freeKickGoal: integer("free_kick_goal").default(0).notNull(),
   trailGoal: integer("trail_goal").default(0).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
 export const playerTotalStats = pgTable("player_total_stats", {
@@ -356,7 +338,10 @@ export const playerTotalStats = pgTable("player_total_stats", {
   trailGoal: integer("trail_goal").default(0).notNull(),
   trailAttempts: integer("trail_attempts").default(0).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
 export type User = typeof users.$inferSelect;

@@ -7,7 +7,7 @@ export const authRoutes = async (fastify: FastifyInstance) => {
     url: "/api/auth/*",
     async handler(request, reply) {
       try {
-      // Construct request URL
+        // Construct request URL
         const url = new URL(request.url, `http://${request.headers.host}`);
 
         // Convert Fastify headers to standard Headers object
@@ -32,9 +32,9 @@ export const authRoutes = async (fastify: FastifyInstance) => {
         console.log("Authentication Error:", error);
         reply.status(500).send({
           error: "Internal authentication error",
-          code: "AUTH_FAILURE"
+          code: "AUTH_FAILURE",
         });
       }
-    }
+    },
   });
 };

@@ -1,63 +1,67 @@
 import { Transaction } from "@/lib/drizzle";
 import { and, eq, isNull } from "drizzle-orm";
-import { clubs, competitionClubs, leagueDivisions, matches, NewLeagueDivision, NewMatch } from "@/db/schema";
+import {
+  clubs,
+  competitionClubs,
+  leagueDivisions,
+  matches,
+  NewLeagueDivision,
+  NewMatch,
+} from "@/db/schema";
 
 interface ClubDivision {
-  clubId: string
-  divisionId: string
+  clubId: string;
+  divisionId: string;
 }
 
 interface LeagueMatch {
   homeClubId: string;
   awayClubId: string;
-};
+}
 
 interface LeagueRound {
-  round: number
-  matches: LeagueMatch[]
+  round: number;
+  matches: LeagueMatch[];
 }
 
 interface CreateLeagueDivisionsProps {
-  db: Transaction,
-  competitionId: string,
-  divisions: number
+  db: Transaction;
+  competitionId: string;
+  divisions: number;
 }
 
 export async function createLeagueDivisions({
   db,
   competitionId,
-  divisions
+  divisions,
 }: CreateLeagueDivisionsProps) {
-  console.log('Creating league divisions...');
+  console.log("Creating league divisions...");
 
-  if (divisions <= 0) throw new Error('Invalid number of divisions.');
+  if (divisions <= 0) throw new Error("Invalid number of divisions.");
 
-  const values: NewLeagueDivision[] = Array.from(
-    { length: divisions },
-    (_, i) => ({
-      competitionId,
-      divisionNumber: i + 1,
-      name: i === divisions - 1 ? 'Divisão de acesso' : `${i + 1}ª divisão`
-    })
-  );
+  const values: NewLeagueDivision[] = Array.from({ length: divisions }, (_, i) => ({
+    competitionId,
+    divisionNumber: i + 1,
+    name: i === divisions - 1 ? "Divisão de acesso" : `${i + 1}ª divisão`,
+  }));
 
-  await db
-    .insert(leagueDivisions)
-    .values(values);
+  await db.insert(leagueDivisions).values(values);
 
   console.log(`League divisions created - ${divisions} divison(s)`);
 }
 
 interface RandomlyBuildInitialLeagueDivisionAssignmentsProps {
-  db: Transaction,
-  competitionId: string
+  db: Transaction;
+  competitionId: string;
 }
 
 export async function randomlyBuildInitialLeagueDivisionAssignments({
   db,
-  competitionId
+  competitionId,
 }: RandomlyBuildInitialLeagueDivisionAssignmentsProps) {
-  console.log(`Randomly building initial league divisions assigments for competition id: ${competitionId}`);
+  console.log(
+    `Randomly building initial league divisions assigments for competition id: ${competitionId}`
+  );
 
   const CLUBS_PER_DIVISION = 20;
 
@@ -65,23 +69,26 @@ export async function randomlyBuildInitialLeagueDivisionAssignments({
   const divisions = await db
     .select({
       id: leagueDivisions.id,
-      divisionNumber: leagueDivisions.divisionNumber
+      divisionNumber: leagueDivisions.divisionNumber,
     })
     .from(leagueDivisions)
     .where(eq(leagueDivisions.competitionId, competitionId))
     .orderBy(leagueDivisions.divisionNumber);
 
-  if (divisions.length <= 0) throw new Error('Invalid league divisions quantity');
+  if (divisions.length <= 0) throw new Error("Invalid league divisions quantity");
 
   // Get Clubs
   const clubsList = await db
     .select({
-      id: clubs.id
+      id: clubs.id,
     })
     .from(clubs)
     .where(isNull(clubs.deletedAt));
 
-  if (clubsList.length !== divisions.length * CLUBS_PER_DIVISION) throw new Error(`Expected exatcly ${divisions.length * CLUBS_PER_DIVISION} clubs instead of ${clubsList.length}`);
+  if (clubsList.length !== divisions.length * CLUBS_PER_DIVISION)
+    throw new Error(
+      `Expected exatcly ${divisions.length * CLUBS_PER_DIVISION} clubs instead of ${clubsList.length}`
+    );
 
   // Shuffle clubs (V1)
   const clubsShuffled = [...clubsList].sort(() => Math.random() - 0.5);
@@ -94,12 +101,15 @@ export async function randomlyBuildInitialLeagueDivisionAssignments({
     const endIndex = (index + 1) * CLUBS_PER_DIVISION;
     const clubsInCurrentDivision = clubsShuffled.slice(startIndex, endIndex);
 
-    if (clubsInCurrentDivision.length !== CLUBS_PER_DIVISION) throw new Error(`Division ${division.divisionNumber} has invalid clubs count (${clubsInCurrentDivision.length})`);
+    if (clubsInCurrentDivision.length !== CLUBS_PER_DIVISION)
+      throw new Error(
+        `Division ${division.divisionNumber} has invalid clubs count (${clubsInCurrentDivision.length})`
+      );
 
-    clubsInCurrentDivision.forEach(club => {
+    clubsInCurrentDivision.forEach((club) => {
       assignments.push({
         clubId: club.id,
-        divisionId: division.id
+        divisionId: division.id,
       });
     });
   });
@@ -110,29 +120,27 @@ export async function randomlyBuildInitialLeagueDivisionAssignments({
 }
 
 interface AssignClubsToCompetitionProps {
-  db: Transaction,
-  competitionId: string,
-  assignments: ClubDivision[]
+  db: Transaction;
+  competitionId: string;
+  assignments: ClubDivision[];
 }
 
 export async function assignClubsToCompetition({
   db,
   competitionId,
-  assignments
+  assignments,
 }: AssignClubsToCompetitionProps) {
-  console.log('Assigning clubs to divisions...');
+  console.log("Assigning clubs to divisions...");
 
-  if (assignments.length === 0) throw new Error('No clubs assignments provided.');
+  if (assignments.length === 0) throw new Error("No clubs assignments provided.");
 
-  await db
-    .insert(competitionClubs)
-    .values(
-      assignments.map(a => ({
-        competitionId,
-        divisionId: a.divisionId,
-        clubId: a.clubId
-      }))
-    );
+  await db.insert(competitionClubs).values(
+    assignments.map((a) => ({
+      competitionId,
+      divisionId: a.divisionId,
+      clubId: a.clubId,
+    }))
+  );
 
   console.log(`Clubs assigned to divisions, competition id: ${competitionId}`);
 }
@@ -157,11 +165,11 @@ export function buildDoubleRoundRobinSchedule(clubIds: string[]) {
       const clubB = clubs[totalClubs - 1 - matchIndex];
 
       // Alternate home/away by round
-      const isEven = (round) % 2 === 0;
+      const isEven = round % 2 === 0;
 
       matches.push({
         homeClubId: isEven ? clubA : clubB,
-        awayClubId: isEven ? clubB : clubA
+        awayClubId: isEven ? clubB : clubA,
       });
     }
 
@@ -173,24 +181,21 @@ export function buildDoubleRoundRobinSchedule(clubIds: string[]) {
 
   const secondLeg: LeagueRound[] = firstLeg.map((round, index) => ({
     round: roundsPerLeg + index,
-    matches: round.matches.map(match => ({
+    matches: round.matches.map((match) => ({
       homeClubId: match.awayClubId,
-      awayClubId: match.homeClubId
-    }))
+      awayClubId: match.homeClubId,
+    })),
   }));
 
   return [...firstLeg, ...secondLeg];
 }
 
 interface BuildLeagueScheduleProps {
-  db: Transaction,
-  competitionId: string
+  db: Transaction;
+  competitionId: string;
 }
 
-export async function buildLeagueMatches({
-  db,
-  competitionId
-}: BuildLeagueScheduleProps) {
+export async function buildLeagueMatches({ db, competitionId }: BuildLeagueScheduleProps) {
   console.log(`Building league schedule for competition id: ${competitionId}`);
 
   // Check if competition already has matches
@@ -199,7 +204,8 @@ export async function buildLeagueMatches({
     .from(matches)
     .where(eq(matches.competitionId, competitionId));
 
-  if (alreadyHasMatches.length > 0) throw new Error(`Competition already has matches, competition id: ${competitionId}`);
+  if (alreadyHasMatches.length > 0)
+    throw new Error(`Competition already has matches, competition id: ${competitionId}`);
 
   // Get league divisions
   const divisions = await db
@@ -217,13 +223,14 @@ export async function buildLeagueMatches({
       .where(
         and(
           eq(competitionClubs.competitionId, competitionId),
-          eq(competitionClubs.divisionId, division.id),
+          eq(competitionClubs.divisionId, division.id)
         )
       );
 
-    if (clubsFromCurrentDivision.length !== 20) throw new Error(`Division ${division.id} does not have 20 clubs`);
+    if (clubsFromCurrentDivision.length !== 20)
+      throw new Error(`Division ${division.id} does not have 20 clubs`);
 
-    const clubIds = clubsFromCurrentDivision.map(club => club.clubId);
+    const clubIds = clubsFromCurrentDivision.map((club) => club.clubId);
 
     const currentDivisionRounds = buildDoubleRoundRobinSchedule(clubIds);
 
@@ -235,7 +242,7 @@ export async function buildLeagueMatches({
           clubHomeId: match.homeClubId,
           clubAwayId: match.awayClubId,
           leagueRound: round.round,
-          type: 'league',
+          type: "league",
         });
       }
     }
@@ -247,24 +254,19 @@ export async function buildLeagueMatches({
 }
 
 interface PersistLeagueMatchesProps {
-  db: Transaction,
-  matchesToPersist: NewMatch[]
+  db: Transaction;
+  matchesToPersist: NewMatch[];
 }
 
-export async function persistLeagueMatches({
-  db,
-  matchesToPersist
-}: PersistLeagueMatchesProps) {
+export async function persistLeagueMatches({ db, matchesToPersist }: PersistLeagueMatchesProps) {
   console.log(`
     Persisting ${matchesToPersist.length} league matches ...
     competition id: ${matchesToPersist[0].competitionId}  
   `);
 
-  if (matchesToPersist.length === 0) throw new Error('No matches to insert');
+  if (matchesToPersist.length === 0) throw new Error("No matches to insert");
 
-  await db
-    .insert(matches)
-    .values(matchesToPersist);
+  await db.insert(matches).values(matchesToPersist);
 
-  console.log('League matches persisted');
+  console.log("League matches persisted");
 }

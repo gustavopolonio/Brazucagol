@@ -1,6 +1,6 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle } from "drizzle-orm/node-postgres";
 import { env } from "../env";
-import { schema } from '@/db/schema';
+import { schema } from "@/db/schema";
 
-export const db = drizzle(env.DATABASE_URL!, {schema: schema});
-export type Transaction = Parameters<Parameters<typeof db["transaction"]>[0]>[0];
+export const db = drizzle(env.DATABASE_URL!, { schema: schema });
+export type Transaction = Parameters<Parameters<(typeof db)["transaction"]>[0]>[0];
