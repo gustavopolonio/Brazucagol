@@ -7,6 +7,7 @@ import { authRoutes } from "./routes/auth";
 import { publicPlayersRoutes } from "./routes/players";
 import { clubsRoutes } from "./routes/clubs";
 import { cupsRoutes } from "./routes/cups";
+import { leaguesRoutes } from "./routes/leagues";
 
 const fastify = Fastify({
   logger: true,
@@ -26,6 +27,7 @@ fastify.register(authRoutes);
 fastify.register(publicPlayersRoutes);
 fastify.register(clubsRoutes);
 fastify.register(cupsRoutes);
+fastify.register(leaguesRoutes);
 
 // Protected routes
 fastify.register(protectedRoutes);
