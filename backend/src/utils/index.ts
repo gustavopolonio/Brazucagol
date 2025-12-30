@@ -11,3 +11,7 @@ export function isPowerOfTwo(number: number) {
 
   return number === 1;
 }
+
+export function ceilHalf(number: number) {
+  return Math.ceil(number / 2);
+}
