@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { getLeagueById, getLeagueMatches } from "@/repositories/leagueRepository";
 import { getClubsByIds } from "@/repositories/clubRepository";
+import { getLeagueDivisionStandings } from "@/repositories/leagueStandingsRepository";
 import { LeagueMatchWithClubs } from "@/types/league.types";
 
 export const leaguesRoutes = async (fastify: FastifyInstance) => {
@@ -65,6 +66,43 @@ export const leaguesRoutes = async (fastify: FastifyInstance) => {
       });
     } catch (error) {
       request.log.error(error, "Failed to fetch league matches");
+      throw new Error(error);
+    }
+  });
+
+  fastify.get("/leagues/:leagueId/standings", async (request, reply) => {
+    const paramsSchema = z.object({
+      leagueId: z.uuid(),
+    });
+
+    const querySchema = z.object({
+      divisionNumber: z.coerce.number().int().positive(),
+    });
+
+    const { leagueId } = paramsSchema.parse(request.params);
+    const { divisionNumber } = querySchema.parse(request.query);
+
+    try {
+      const league = await getLeagueById(leagueId);
+
+      if (!league) {
+        return reply.status(404).send({ error: "League not found." });
+      }
+
+      const standings = await getLeagueDivisionStandings(leagueId, divisionNumber);
+
+      if (standings.length === 0) {
+        return reply.status(404).send({ error: "No standings found for this league division." });
+      }
+
+      return reply.status(200).send({
+        id: league.id,
+        name: league.name,
+        divisionNumber,
+        standings,
+      });
+    } catch (error) {
+      request.log.error(error, "Failed to fetch league standings");
       throw new Error(error);
     }
   });
