@@ -3,6 +3,7 @@ import { createCompetition } from "@/services/competition";
 import {
   assignClubsToCompetition,
   buildLeagueMatches,
+  createLeagueStandings,
   createLeagueDivisions,
   persistLeagueMatches,
   randomlyBuildInitialLeagueDivisionAssignments,
@@ -33,6 +34,12 @@ async function bootstrapLeague(seasonId: string) {
     });
 
     await assignClubsToCompetition({
+      db: tx,
+      competitionId: league.id,
+      assignments,
+    });
+
+    await createLeagueStandings({
       db: tx,
       competitionId: league.id,
       assignments,

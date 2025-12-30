@@ -4,6 +4,7 @@ import {
   clubs,
   competitionClubs,
   leagueDivisions,
+  leagueStandings,
   matches,
   NewLeagueDivision,
   NewMatch,
@@ -143,6 +144,40 @@ export async function assignClubsToCompetition({
   );
 
   console.log(`Clubs assigned to divisions, competition id: ${competitionId}`);
+}
+
+interface CreateLeagueStandingsProps {
+  db: Transaction;
+  competitionId: string;
+  assignments: ClubDivision[];
+}
+
+export async function createLeagueStandings({
+  db,
+  competitionId,
+  assignments,
+}: CreateLeagueStandingsProps) {
+  console.log("Creating league standings...");
+
+  if (assignments.length === 0) throw new Error("No clubs assignments provided.");
+
+  const alreadyHasStandings = await db
+    .select({ id: leagueStandings.id })
+    .from(leagueStandings)
+    .where(eq(leagueStandings.competitionId, competitionId));
+
+  if (alreadyHasStandings.length > 0)
+    throw new Error(`Competition already has standings, competition id: ${competitionId}`);
+
+  await db.insert(leagueStandings).values(
+    assignments.map((assignment) => ({
+      competitionId,
+      divisionId: assignment.divisionId,
+      clubId: assignment.clubId,
+    }))
+  );
+
+  console.log("League standings created");
 }
 
 export function buildDoubleRoundRobinSchedule(clubIds: string[]) {
