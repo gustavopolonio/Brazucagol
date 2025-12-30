@@ -180,6 +180,38 @@ export const leagueDivisions = pgTable(
   ]
 );
 
+export const leagueStandings = pgTable(
+  "league_standings",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    competitionId: uuid("competition_id")
+      .notNull()
+      .references(() => competitions.id, { onDelete: "cascade" }),
+
+    divisionId: uuid("division_id")
+      .notNull()
+      .references(() => leagueDivisions.id, { onDelete: "cascade" }),
+
+    clubId: uuid("club_id")
+      .notNull()
+      .references(() => clubs.id, { onDelete: "cascade" }),
+
+    matchesPlayed: integer("played").notNull().default(0),
+    wins: integer("wins").notNull().default(0),
+    draws: integer("draws").notNull().default(0),
+    defeats: integer("defeats").notNull().default(0),
+
+    goalsFor: integer("goals_for").notNull().default(0),
+    goalsAgainst: integer("goals_against").notNull().default(0),
+
+    points: integer("points").notNull().default(0),
+  },
+  (table) => [
+    uniqueIndex("league_standings_unique").on(table.competitionId, table.divisionId, table.clubId),
+  ]
+);
+
 export const cupRounds = pgTable(
   "cup_rounds",
   {
