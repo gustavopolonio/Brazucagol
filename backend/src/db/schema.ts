@@ -185,12 +185,16 @@ export const cupRounds = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     name: varchar("name", { length: 100 }).notNull(),
-    stage: integer("stage").notNull(), // 0 -> Final; 1 -> Semi final ...
+    slug: varchar("slug", { length: 50 }).notNull(),
     totalClubs: integer("total_clubs").notNull(),
+
+    // 0 -> Final; 1 -> Semi final ...
+    stage: integer("stage").notNull(),
   },
   (table) => [
     uniqueIndex("cup_rounds_stage_unique").on(table.stage),
     uniqueIndex("cup_rounds_total_clubs_unique").on(table.totalClubs),
+    uniqueIndex("cup_rounds_slug_unique").on(table.slug),
   ]
 );
 

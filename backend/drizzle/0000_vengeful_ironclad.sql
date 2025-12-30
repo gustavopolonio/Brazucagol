@@ -66,8 +66,9 @@ CREATE TABLE "competitions" (
 CREATE TABLE "cup_rounds" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar(100) NOT NULL,
-	"stage" integer NOT NULL,
-	"total_clubs" integer NOT NULL
+	"slug" varchar(50) NOT NULL,
+	"total_clubs" integer NOT NULL,
+	"stage" integer NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "league_divisions" (
@@ -198,9 +199,9 @@ ALTER TABLE "matches" ADD CONSTRAINT "matches_division_id_league_divisions_id_fk
 ALTER TABLE "matches" ADD CONSTRAINT "matches_cup_round_id_cup_rounds_id_fk" FOREIGN KEY ("cup_round_id") REFERENCES "public"."cup_rounds"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "matches" ADD CONSTRAINT "matches_club_home_id_clubs_id_fk" FOREIGN KEY ("club_home_id") REFERENCES "public"."clubs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "matches" ADD CONSTRAINT "matches_club_away_id_clubs_id_fk" FOREIGN KEY ("club_away_id") REFERENCES "public"."clubs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "matches" ADD CONSTRAINT "matches_winner_club_id_clubs_id_fk" FOREIGN KEY ("winner_club_id") REFERENCES "public"."clubs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "matches" ADD CONSTRAINT "matches_home_from_match_id_matches_id_fk" FOREIGN KEY ("home_from_match_id") REFERENCES "public"."matches"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "matches" ADD CONSTRAINT "matches_away_from_match_id_matches_id_fk" FOREIGN KEY ("away_from_match_id") REFERENCES "public"."matches"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "matches" ADD CONSTRAINT "matches_winner_club_id_clubs_id_fk" FOREIGN KEY ("winner_club_id") REFERENCES "public"."clubs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "player_round_stats" ADD CONSTRAINT "player_round_stats_player_id_players_id_fk" FOREIGN KEY ("player_id") REFERENCES "public"."players"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "player_round_stats" ADD CONSTRAINT "player_round_stats_match_id_matches_id_fk" FOREIGN KEY ("match_id") REFERENCES "public"."matches"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "player_total_stats" ADD CONSTRAINT "player_total_stats_player_id_players_id_fk" FOREIGN KEY ("player_id") REFERENCES "public"."players"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -214,6 +215,7 @@ CREATE UNIQUE INDEX "clubs_name_unique" ON "clubs" USING btree ("name");--> stat
 CREATE UNIQUE INDEX "competition_clubs_competition_club_unique" ON "competition_clubs" USING btree ("competition_id","club_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "cup_rounds_stage_unique" ON "cup_rounds" USING btree ("stage");--> statement-breakpoint
 CREATE UNIQUE INDEX "cup_rounds_total_clubs_unique" ON "cup_rounds" USING btree ("total_clubs");--> statement-breakpoint
+CREATE UNIQUE INDEX "cup_rounds_slug_unique" ON "cup_rounds" USING btree ("slug");--> statement-breakpoint
 CREATE UNIQUE INDEX "league_divisions_competition_division_unique" ON "league_divisions" USING btree ("competition_id","division_number");--> statement-breakpoint
 CREATE UNIQUE INDEX "players_user_id_unique" ON "players" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "players_name_unique" ON "players" USING btree ("name") WHERE "players"."deleted_at" is null;--> statement-breakpoint

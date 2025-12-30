@@ -1,5 +1,5 @@
 {
-  "id": "2f08ae86-503b-4fa8-ad85-811f47ad0cd4",
+  "id": "f61167e8-1c2a-4d99-a1d6-f143c37e8788",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -133,8 +133,12 @@
           "name": "accounts_user_id_users_id_fk",
           "tableFrom": "accounts",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -188,8 +192,12 @@
           "name": "club_chat_messages_club_id_clubs_id_fk",
           "tableFrom": "club_chat_messages",
           "tableTo": "clubs",
-          "columnsFrom": ["club_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "club_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -197,8 +205,12 @@
           "name": "club_chat_messages_player_id_players_id_fk",
           "tableFrom": "club_chat_messages",
           "tableTo": "players",
-          "columnsFrom": ["player_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -298,8 +310,12 @@
           "name": "club_members_player_id_players_id_fk",
           "tableFrom": "club_members",
           "tableTo": "players",
-          "columnsFrom": ["player_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -307,8 +323,12 @@
           "name": "club_members_club_id_clubs_id_fk",
           "tableFrom": "club_members",
           "tableTo": "clubs",
-          "columnsFrom": ["club_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "club_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -469,8 +489,12 @@
           "name": "competition_clubs_competition_id_competitions_id_fk",
           "tableFrom": "competition_clubs",
           "tableTo": "competitions",
-          "columnsFrom": ["competition_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "competition_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -478,8 +502,12 @@
           "name": "competition_clubs_division_id_league_divisions_id_fk",
           "tableFrom": "competition_clubs",
           "tableTo": "league_divisions",
-          "columnsFrom": ["division_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "division_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -487,8 +515,12 @@
           "name": "competition_clubs_club_id_clubs_id_fk",
           "tableFrom": "competition_clubs",
           "tableTo": "clubs",
-          "columnsFrom": ["club_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "club_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -543,8 +575,12 @@
           "name": "competitions_season_id_seasons_id_fk",
           "tableFrom": "competitions",
           "tableTo": "seasons",
-          "columnsFrom": ["season_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "season_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -572,14 +608,20 @@
           "primaryKey": false,
           "notNull": true
         },
-        "stage": {
-          "name": "stage",
-          "type": "integer",
+        "slug": {
+          "name": "slug",
+          "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true
         },
         "total_clubs": {
           "name": "total_clubs",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stage": {
+          "name": "stage",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -606,6 +648,21 @@
           "columns": [
             {
               "expression": "total_clubs",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "cup_rounds_slug_unique": {
+          "name": "cup_rounds_slug_unique",
+          "columns": [
+            {
+              "expression": "slug",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -682,8 +739,12 @@
           "name": "league_divisions_competition_id_competitions_id_fk",
           "tableFrom": "league_divisions",
           "tableTo": "competitions",
-          "columnsFrom": ["competition_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "competition_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -875,8 +936,12 @@
           "name": "matches_competition_id_competitions_id_fk",
           "tableFrom": "matches",
           "tableTo": "competitions",
-          "columnsFrom": ["competition_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "competition_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -884,8 +949,12 @@
           "name": "matches_division_id_league_divisions_id_fk",
           "tableFrom": "matches",
           "tableTo": "league_divisions",
-          "columnsFrom": ["division_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "division_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -893,8 +962,12 @@
           "name": "matches_cup_round_id_cup_rounds_id_fk",
           "tableFrom": "matches",
           "tableTo": "cup_rounds",
-          "columnsFrom": ["cup_round_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "cup_round_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -902,8 +975,12 @@
           "name": "matches_club_home_id_clubs_id_fk",
           "tableFrom": "matches",
           "tableTo": "clubs",
-          "columnsFrom": ["club_home_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "club_home_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -911,17 +988,38 @@
           "name": "matches_club_away_id_clubs_id_fk",
           "tableFrom": "matches",
           "tableTo": "clubs",
-          "columnsFrom": ["club_away_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "club_away_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "matches_winner_club_id_clubs_id_fk": {
+          "name": "matches_winner_club_id_clubs_id_fk",
+          "tableFrom": "matches",
+          "tableTo": "clubs",
+          "columnsFrom": [
+            "winner_club_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
           "onUpdate": "no action"
         },
         "matches_home_from_match_id_matches_id_fk": {
           "name": "matches_home_from_match_id_matches_id_fk",
           "tableFrom": "matches",
           "tableTo": "matches",
-          "columnsFrom": ["home_from_match_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "home_from_match_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -929,17 +1027,12 @@
           "name": "matches_away_from_match_id_matches_id_fk",
           "tableFrom": "matches",
           "tableTo": "matches",
-          "columnsFrom": ["away_from_match_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "matches_winner_club_id_clubs_id_fk": {
-          "name": "matches_winner_club_id_clubs_id_fk",
-          "tableFrom": "matches",
-          "tableTo": "clubs",
-          "columnsFrom": ["winner_club_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "away_from_match_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1022,8 +1115,12 @@
           "name": "player_round_stats_player_id_players_id_fk",
           "tableFrom": "player_round_stats",
           "tableTo": "players",
-          "columnsFrom": ["player_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1031,8 +1128,12 @@
           "name": "player_round_stats_match_id_matches_id_fk",
           "tableFrom": "player_round_stats",
           "tableTo": "matches",
-          "columnsFrom": ["match_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "match_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1130,8 +1231,12 @@
           "name": "player_total_stats_player_id_players_id_fk",
           "tableFrom": "player_total_stats",
           "tableTo": "players",
-          "columnsFrom": ["player_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1237,8 +1342,12 @@
           "name": "players_user_id_users_id_fk",
           "tableFrom": "players",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1387,8 +1496,12 @@
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1560,22 +1673,39 @@
     "public.club_role": {
       "name": "club_role",
       "schema": "public",
-      "values": ["president", "vice_president", "director", "captain", "player"]
+      "values": [
+        "president",
+        "vice_president",
+        "director",
+        "captain",
+        "player"
+      ]
     },
     "public.competition_type": {
       "name": "competition_type",
       "schema": "public",
-      "values": ["league", "cup"]
+      "values": [
+        "league",
+        "cup"
+      ]
     },
     "public.match_status": {
       "name": "match_status",
       "schema": "public",
-      "values": ["pending", "in_progress", "finished"]
+      "values": [
+        "pending",
+        "in_progress",
+        "finished"
+      ]
     },
     "public.match_type": {
       "name": "match_type",
       "schema": "public",
-      "values": ["league", "cup", "friendly"]
+      "values": [
+        "league",
+        "cup",
+        "friendly"
+      ]
     }
   },
   "schemas": {},
