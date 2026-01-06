@@ -24,6 +24,7 @@ export const clubRoleEnum = pgEnum("club_role", [
   "player",
 ]);
 export const competitionTypeEnum = pgEnum("competition_type", ["league", "cup"]);
+export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
 
 export const users = pgTable(
   "users",
@@ -32,6 +33,9 @@ export const users = pgTable(
     name: text("name").notNull(),
     email: varchar("email", { length: 255 }).notNull(),
     emailVerified: boolean("email_verified").default(false).notNull(),
+
+    role: userRoleEnum("role").default("user").notNull(),
+
     image: text("image"),
     hasPlayer: boolean("has_player").default(false).notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
