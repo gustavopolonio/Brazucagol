@@ -8,6 +8,7 @@ import { publicPlayersRoutes } from "./routes/players";
 import { clubsRoutes } from "./routes/clubs";
 import { cupsRoutes } from "./routes/cups";
 import { leaguesRoutes } from "./routes/leagues";
+import { adminRoutes } from "./plugins/adminRoutes";
 
 const fastify = Fastify({
   logger: true,
@@ -29,8 +30,11 @@ fastify.register(clubsRoutes);
 fastify.register(cupsRoutes);
 fastify.register(leaguesRoutes);
 
-// Protected routes
+// Protected routes (logged-in users)
 fastify.register(protectedRoutes);
+
+// Admin routes (logged-in + admin)
+fastify.register(adminRoutes);
 
 // Error 500 handler
 fastify.setErrorHandler((error, _, reply) => {

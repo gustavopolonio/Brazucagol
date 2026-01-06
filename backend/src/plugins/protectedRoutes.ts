@@ -1,31 +1,14 @@
-import { auth } from "@/lib/auth";
 import { protectedPlayersRoutes } from "@/routes/players";
 import { usersRoutes } from "@/routes/users";
 import { FastifyInstance } from "fastify";
+import { authPlugin } from "@/plugins/authPlugin";
 
 export async function protectedRoutes(fastify: FastifyInstance) {
   // Auth middleware
-  fastify.addHook("onRequest", async (request, reply) => {
-    const headers = new Headers();
-    Object.entries(request.headers).forEach(([key, value]) => {
-      if (Array.isArray(value)) {
-        value.forEach((val) => headers.append(key, val));
-      } else if (value !== undefined) {
-        headers.append(key, value);
-      }
-    });
+  fastify.register(async (app) => {
+    await authPlugin(app);
 
-    const session = await auth.api.getSession({
-      headers,
-    });
-
-    if (!session) {
-      return reply.status(401).send({ error: "Unauthorized" });
-    }
-
-    request.authSession = session;
+    app.register(protectedPlayersRoutes);
+    app.register(usersRoutes);
   });
-
-  fastify.register(protectedPlayersRoutes);
-  fastify.register(usersRoutes);
 }

@@ -12,6 +12,11 @@ export const auth = betterAuth({
         required: true,
         defaultValue: false,
       },
+      role: {
+        type: "string",
+        required: true,
+        defaultValue: "user",
+      },
     },
   },
   trustedOrigins: [env.CLIENT_URL],
