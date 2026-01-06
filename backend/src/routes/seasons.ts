@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "@/lib/drizzle";
+import { createSeason } from "@/services/season";
 import { scheduleSeasonMatches } from "@/services/season/schedule";
 import { isFiniteNumber, toRoundStartDate, toZonedDayKey } from "@/utils";
 import {
@@ -22,6 +23,44 @@ function findDuplicatePauseDays(pauses: Array<{ date: Date }>): string[] {
 }
 
 export async function seasonsRoutes(fastify: FastifyInstance) {
+  fastify.post("/seasons", async (request, reply) => {
+    const bodySchema = z.object({
+      seasonName: z.string().trim().min(1).max(50),
+      startsAt: z.iso.datetime({ offset: true }).optional(),
+      endsAt: z.iso.datetime({ offset: true }).optional(),
+    });
+
+    const { seasonName, startsAt, endsAt } = bodySchema.parse(request.body);
+
+    const parsedStartsAt = startsAt ? new Date(startsAt) : undefined;
+    const parsedEndsAt = endsAt ? new Date(endsAt) : undefined;
+
+    if (parsedStartsAt && !isFiniteNumber(parsedStartsAt.getTime())) {
+      return reply.status(400).send({ error: "Invalid startsAt datetime." });
+    }
+    if (parsedEndsAt && !isFiniteNumber(parsedEndsAt.getTime())) {
+      return reply.status(400).send({ error: "Invalid endsAt datetime." });
+    }
+
+    try {
+      const season = await createSeason(seasonName, {
+        startsAt: parsedStartsAt,
+        endsAt: parsedEndsAt,
+      });
+
+      return reply.status(201).send({
+        id: season.id,
+        seasonName: season.name,
+        startsAt: season.startsAt ? season.startsAt.toISOString() : null,
+        endsAt: season.endsAt ? season.endsAt.toISOString() : null,
+        createdAt: season.createdAt.toISOString(),
+      });
+    } catch (error) {
+      request.log.error(error, "Failed to create season");
+      throw new Error(error);
+    }
+  });
+
   fastify.post("/seasons/:seasonId/schedule", async (request, reply) => {
     const paramsSchema = z.object({
       seasonId: z.uuid(),
