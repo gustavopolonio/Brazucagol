@@ -151,6 +151,20 @@ export const seasons = pgTable("seasons", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const seasonPauses = pgTable(
+  "season_pauses",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    seasonId: uuid("season_id")
+      .references(() => seasons.id, { onDelete: "cascade" })
+      .notNull(),
+    date: timestamp("date", { withTimezone: true }).notNull(),
+    reason: text("reason"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("season_pauses_season_starts_at_unique").on(table.seasonId, table.date)]
+);
+
 export const competitions = pgTable("competitions", {
   id: uuid("id").defaultRandom().primaryKey(),
   seasonId: uuid("season_id")
@@ -275,6 +289,7 @@ export const matches = pgTable(
 
     homeGoals: integer("home_goals").default(0).notNull(),
     awayGoals: integer("away_goals").default(0).notNull(),
+    // Store the date with the correct hour to start? Or just the day/month/year/timestemp? -> I think it's better to don't store the correct hour here
     date: timestamp("date", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
