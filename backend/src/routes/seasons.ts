@@ -4,9 +4,11 @@ import { db } from "@/lib/drizzle";
 import { createSeason } from "@/services/season";
 import { scheduleSeasonMatches } from "@/services/season/schedule";
 import { isFiniteNumber, toRoundStartDate, toZonedDayKey } from "@/utils";
+import { getSeasonById } from "@/repositories/seasonRepository";
 import {
   createSeasonPauses,
   deleteSeasonPausesBySeasonId,
+  getSeasonPausesBySeasonId,
 } from "@/repositories/seasonPausesRepository";
 
 function findDuplicatePauseDays(pauses: Array<{ date: Date }>): string[] {
@@ -59,6 +61,31 @@ export async function seasonsRoutes(fastify: FastifyInstance) {
       request.log.error(error, "Failed to create season");
       throw new Error(error);
     }
+  });
+
+  fastify.get("/seasons/:seasonId/pauses", async (request, reply) => {
+    const paramsSchema = z.object({
+      seasonId: z.uuid(),
+    });
+
+    const { seasonId } = paramsSchema.parse(request.params);
+
+    const season = await getSeasonById({ db, seasonId });
+
+    if (!season) {
+      return reply.status(404).send({ error: "Season not found." });
+    }
+
+    const pauses = await getSeasonPausesBySeasonId({ db, seasonId });
+
+    return reply.status(200).send({
+      seasonId,
+      pauses: pauses.map((pause) => ({
+        id: pause.id,
+        date: pause.date.toISOString(),
+        reason: pause.reason,
+      })),
+    });
   });
 
   fastify.post("/seasons/:seasonId/schedule", async (request, reply) => {

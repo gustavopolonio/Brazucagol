@@ -1,6 +1,8 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { seasonPauses } from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
+
+type DbClient = (typeof import("@/lib/drizzle"))["db"];
 
 interface DeleteSeasonPausesBySeasonIdProps {
   db: Transaction;
@@ -33,4 +35,21 @@ export async function createSeasonPauses({ db, seasonId, pauses }: CreateSeasonP
       reason: pause.reason,
     }))
   );
+}
+
+interface GetSeasonPausesBySeasonIdProps {
+  db: Transaction | DbClient;
+  seasonId: string;
+}
+
+export async function getSeasonPausesBySeasonId({ db, seasonId }: GetSeasonPausesBySeasonIdProps) {
+  return db
+    .select({
+      id: seasonPauses.id,
+      date: seasonPauses.date,
+      reason: seasonPauses.reason,
+    })
+    .from(seasonPauses)
+    .where(eq(seasonPauses.seasonId, seasonId))
+    .orderBy(asc(seasonPauses.date));
 }

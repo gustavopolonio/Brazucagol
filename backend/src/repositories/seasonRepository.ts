@@ -2,6 +2,19 @@ import { and, eq, isNotNull, sql } from "drizzle-orm";
 import { competitions, cupRounds, matches, seasons, Competition } from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
+type DbClient = (typeof import("@/lib/drizzle"))["db"];
+
+interface GetSeasonByIdProps {
+  db: Transaction | DbClient;
+  seasonId: string;
+}
+
+export async function getSeasonById({ db, seasonId }: GetSeasonByIdProps) {
+  const rows = await db.select({ id: seasons.id }).from(seasons).where(eq(seasons.id, seasonId));
+
+  return rows[0] ?? null;
+}
+
 interface GetSeasonCompetitionsBySeasonIdProps {
   db: Transaction;
   seasonId: string;
