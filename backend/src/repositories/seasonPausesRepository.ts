@@ -1,4 +1,4 @@
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { seasonPauses } from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
@@ -14,6 +14,19 @@ export async function deleteSeasonPausesBySeasonId({
   seasonId,
 }: DeleteSeasonPausesBySeasonIdProps) {
   await db.delete(seasonPauses).where(eq(seasonPauses.seasonId, seasonId));
+}
+
+interface DeleteSeasonPauseByIdProps {
+  db: Transaction;
+  seasonId: string;
+  pauseId: string;
+}
+
+export async function deleteSeasonPauseById({ db, seasonId, pauseId }: DeleteSeasonPauseByIdProps) {
+  return db
+    .delete(seasonPauses)
+    .where(and(eq(seasonPauses.id, pauseId), eq(seasonPauses.seasonId, seasonId)))
+    .returning({ id: seasonPauses.id });
 }
 
 type CreateSeasonPauseInput = {

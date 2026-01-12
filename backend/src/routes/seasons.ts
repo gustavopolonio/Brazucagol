@@ -10,6 +10,7 @@ import { isFiniteNumber, sortByDateAsc, toRoundStartDate, toZonedDayKey } from "
 import { getSeasonById, getSeasonStartsAtById } from "@/repositories/seasonRepository";
 import {
   createSeasonPauses,
+  deleteSeasonPauseById,
   deleteSeasonPausesBySeasonId,
   getSeasonPausesBySeasonId,
 } from "@/repositories/seasonPausesRepository";
@@ -198,6 +199,54 @@ export async function seasonsRoutes(fastify: FastifyInstance) {
       request.log.error(error, "Failed to create season pauses");
       return reply.status(400).send({
         error: error instanceof Error ? error.message : "Failed to create season pauses.",
+      });
+    }
+  });
+
+  fastify.delete("/seasons/:seasonId/pauses/:pauseId", async (request, reply) => {
+    const paramsSchema = z.object({
+      seasonId: z.uuid(),
+      pauseId: z.uuid(),
+    });
+
+    const { seasonId, pauseId } = paramsSchema.parse(request.params);
+
+    const season = await getSeasonStartsAtById({ db, seasonId });
+
+    if (!season) {
+      return reply.status(404).send({ error: "Season not found." });
+    }
+
+    if (!season.startsAt) {
+      return reply.status(400).send({ error: "Season is missing startsAt. Schedule it first." });
+    }
+
+    try {
+      const result = await db.transaction(async (tx) => {
+        const deleted = await deleteSeasonPauseById({ db: tx, seasonId, pauseId });
+
+        if (deleted.length === 0) throw new Error("Pause not found.");
+
+        const pauses = await getSeasonPausesBySeasonId({ db: tx, seasonId });
+
+        return scheduleSeasonMatches({
+          db: tx,
+          seasonId,
+          seasonStartsAt: season.startsAt,
+          pauses: pauses.map((pause) => ({ date: pause.date })),
+          dryRun: false,
+          requireAllPendingMatches: false,
+        });
+      });
+
+      return reply.status(200).send({
+        seasonId,
+        endsAt: result.seasonEndsAt.toISOString(),
+      });
+    } catch (error) {
+      request.log.error(error, "Failed to delete season pause");
+      return reply.status(400).send({
+        error: error instanceof Error ? error.message : "Failed to delete season pause.",
       });
     }
   });
