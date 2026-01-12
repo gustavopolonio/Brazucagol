@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, sql } from "drizzle-orm";
+import { and, eq, gte, isNotNull, lt, ne, or, sql } from "drizzle-orm";
 import { competitions, cupRounds, matches, seasons, Competition } from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
@@ -11,6 +11,20 @@ interface GetSeasonByIdProps {
 
 export async function getSeasonById({ db, seasonId }: GetSeasonByIdProps) {
   const rows = await db.select({ id: seasons.id }).from(seasons).where(eq(seasons.id, seasonId));
+
+  return rows[0] ?? null;
+}
+
+interface GetSeasonStartsAtByIdProps {
+  db: Transaction | DbClient;
+  seasonId: string;
+}
+
+export async function getSeasonStartsAtById({ db, seasonId }: GetSeasonStartsAtByIdProps) {
+  const rows = await db
+    .select({ startsAt: seasons.startsAt })
+    .from(seasons)
+    .where(eq(seasons.id, seasonId));
 
   return rows[0] ?? null;
 }
@@ -63,6 +77,37 @@ export async function getSeasonMatchesStatsBySeasonId({
     .where(eq(competitions.seasonId, seasonId));
 
   return rows[0] ?? null;
+}
+
+interface GetSeasonNonPendingMatchesByDateRangesProps {
+  db: Transaction;
+  seasonId: string;
+  ranges: Array<{ start: Date; end: Date }>;
+}
+
+export async function getSeasonNonPendingMatchesByDateRanges({
+  db,
+  seasonId,
+  ranges,
+}: GetSeasonNonPendingMatchesByDateRangesProps): Promise<Array<{ date: Date }>> {
+  if (ranges.length === 0) return [];
+
+  const rangeConditions = ranges.map((range) =>
+    and(gte(matches.date, range.start), lt(matches.date, range.end))
+  );
+
+  return db
+    .select({ date: matches.date })
+    .from(matches)
+    .innerJoin(competitions, eq(matches.competitionId, competitions.id))
+    .where(
+      and(
+        eq(competitions.seasonId, seasonId),
+        isNotNull(matches.date),
+        ne(matches.status, "pending"),
+        or(...rangeConditions)
+      )
+    );
 }
 
 interface GetSeasonLeagueRoundsBySeasonIdProps {

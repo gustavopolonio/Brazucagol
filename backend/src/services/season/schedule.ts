@@ -5,6 +5,7 @@ import {
   getSeasonCupRoundsBySeasonId,
   getSeasonLeagueRoundsBySeasonId,
   getSeasonMatchesStatsBySeasonId,
+  getSeasonNonPendingMatchesByDateRanges,
   updatePendingCupMatchDate,
   updatePendingLeagueMatchDate,
   updateSeasonScheduleDates,
@@ -36,6 +37,47 @@ export type SeasonRound = LeagueRound | CupRound;
 export type SeasonScheduledRound = SeasonRound & {
   date: Date;
 };
+
+interface AssertSeasonPausesAllowedProps {
+  db: Transaction;
+  seasonId: string;
+  pausesToCreate: SeasonPauseInput[];
+}
+
+export async function ensureSeasonPausesOnlyOnPendingMatches({
+  db,
+  seasonId,
+  pausesToCreate,
+}: AssertSeasonPausesAllowedProps) {
+  const pausesToCreateByDay = new Map<string, { date: Date }>();
+
+  for (const pause of pausesToCreate) {
+    const dayKey = toZonedDayKey(pause.date);
+    if (!pausesToCreateByDay.has(dayKey)) {
+      pausesToCreateByDay.set(dayKey, { date: pause.date });
+    }
+  }
+
+  const pausesToCreateRanges = Array.from(pausesToCreateByDay.values()).map((pause) => {
+    const start = toRoundStartDate(pause.date);
+    const end = addDaysKeepingRoundStart({ date: start, daysToAdd: 1 });
+    return { start, end };
+  });
+
+  const nonPendingMatches = await getSeasonNonPendingMatchesByDateRanges({
+    db,
+    seasonId,
+    ranges: pausesToCreateRanges,
+  });
+
+  if (nonPendingMatches.length > 0) {
+    const conflictDays = Array.from(
+      new Set(nonPendingMatches.map((match) => toZonedDayKey(match.date)))
+    ).sort();
+
+    throw new Error(`Pause date(s) have non-pending matches: ${conflictDays.join(", ")}.`);
+  }
+}
 
 function expandPauseDays(pauses: SeasonPauseInput[]): Set<string> {
   const pauseDays = new Set<string>();
@@ -135,9 +177,14 @@ function assignDatesToSeasonRounds({
 interface BuildSeasonRoundsProps {
   db: Transaction;
   seasonId: string;
+  requireAllPendingMatches?: boolean;
 }
 
-async function buildSeasonRounds({ db, seasonId }: BuildSeasonRoundsProps) {
+async function buildSeasonRounds({
+  db,
+  seasonId,
+  requireAllPendingMatches = true,
+}: BuildSeasonRoundsProps) {
   const seasonCompetitions = await getSeasonCompetitionsBySeasonId({ db, seasonId });
 
   if (seasonCompetitions.length === 0) {
@@ -153,7 +200,7 @@ async function buildSeasonRounds({ db, seasonId }: BuildSeasonRoundsProps) {
     throw new Error("Season has no matches.");
   }
 
-  if (stats.nonPendingMatches > 0) {
+  if (requireAllPendingMatches && stats.nonPendingMatches > 0) {
     throw new Error("Season has non-pending matches; refusing to reschedule.");
   }
 
@@ -233,6 +280,7 @@ interface ScheduleSeasonMatchesProps {
   seasonStartsAt: Date;
   pauses?: SeasonPauseInput[];
   dryRun?: boolean;
+  requireAllPendingMatches?: boolean;
 }
 
 export async function scheduleSeasonMatches({
@@ -241,10 +289,11 @@ export async function scheduleSeasonMatches({
   seasonStartsAt,
   pauses = [],
   dryRun = false,
+  requireAllPendingMatches = true,
 }: ScheduleSeasonMatchesProps) {
   const seasonStartsAtRoundStart = toRoundStartDate(seasonStartsAt);
 
-  const groups = await buildSeasonRounds({ db, seasonId });
+  const groups = await buildSeasonRounds({ db, seasonId, requireAllPendingMatches });
   const orderedGroups = intercalateSeasonRoundsKeepingCupFinalsLast(groups);
 
   const schedule = assignDatesToSeasonRounds({

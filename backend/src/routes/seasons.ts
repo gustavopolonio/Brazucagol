@@ -2,9 +2,12 @@ import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "@/lib/drizzle";
 import { createSeason } from "@/services/season";
-import { scheduleSeasonMatches } from "@/services/season/schedule";
-import { isFiniteNumber, toRoundStartDate, toZonedDayKey } from "@/utils";
-import { getSeasonById } from "@/repositories/seasonRepository";
+import {
+  ensureSeasonPausesOnlyOnPendingMatches,
+  scheduleSeasonMatches,
+} from "@/services/season/schedule";
+import { isFiniteNumber, sortByDateAsc, toRoundStartDate, toZonedDayKey } from "@/utils";
+import { getSeasonById, getSeasonStartsAtById } from "@/repositories/seasonRepository";
 import {
   createSeasonPauses,
   deleteSeasonPausesBySeasonId,
@@ -86,6 +89,117 @@ export async function seasonsRoutes(fastify: FastifyInstance) {
         reason: pause.reason,
       })),
     });
+  });
+
+  fastify.post("/seasons/:seasonId/pauses", async (request, reply) => {
+    const paramsSchema = z.object({
+      seasonId: z.uuid(),
+    });
+
+    const bodySchema = z.object({
+      pauses: z.array(
+        z.object({
+          date: z.iso.datetime({ offset: true }),
+          reason: z.string().trim().min(1).max(255).optional(),
+        })
+      ),
+      dryRun: z.boolean().optional().default(false),
+    });
+
+    const { seasonId } = paramsSchema.parse(request.params);
+    const { pauses, dryRun } = bodySchema.parse(request.body);
+
+    const pausesToCreate: Array<{ date: Date; reason?: string }> = [];
+
+    for (const pause of pauses) {
+      const pauseDate = new Date(pause.date);
+
+      if (!isFiniteNumber(pauseDate.getTime())) {
+        return reply.status(400).send({ error: "Invalid pause startsAt datetime." });
+      }
+
+      pausesToCreate.push({
+        date: toRoundStartDate(pauseDate),
+        reason: pause.reason,
+      });
+    }
+
+    const duplicatePauseDays = findDuplicatePauseDays(pausesToCreate);
+
+    if (duplicatePauseDays.length > 0) {
+      return reply.status(400).send({
+        error: `Duplicate pause date(s): ${duplicatePauseDays.join(", ")}. Only one pause per day is allowed.`,
+      });
+    }
+
+    const season = await getSeasonStartsAtById({ db, seasonId });
+
+    if (!season) {
+      return reply.status(404).send({ error: "Season not found." });
+    }
+
+    if (!season.startsAt) {
+      return reply.status(400).send({ error: "Season is missing startsAt. Schedule it first." });
+    }
+
+    try {
+      const result = await db.transaction(async (tx) => {
+        await ensureSeasonPausesOnlyOnPendingMatches({
+          db: tx,
+          seasonId,
+          pausesToCreate,
+        });
+
+        if (!dryRun) {
+          await createSeasonPauses({
+            db: tx,
+            seasonId,
+            pauses: pausesToCreate,
+          });
+        }
+
+        const allPauses = await getSeasonPausesBySeasonId({ db: tx, seasonId });
+        const allPausesByDate = allPauses.map((pause) => ({ date: pause.date }));
+
+        if (dryRun) {
+          allPausesByDate.push(...pausesToCreate.map((pause) => ({ date: pause.date })));
+          sortByDateAsc(allPausesByDate);
+        }
+
+        const uniquePausesByDay = new Map<string, { date: Date }>();
+
+        for (const pause of allPausesByDate) {
+          const dayKey = toZonedDayKey(pause.date);
+          if (!uniquePausesByDay.has(dayKey)) {
+            uniquePausesByDay.set(dayKey, pause);
+          }
+        }
+
+        const pausesForSchedule = sortByDateAsc(Array.from(uniquePausesByDay.values())).map(
+          (pause) => ({ date: pause.date })
+        );
+
+        return scheduleSeasonMatches({
+          db: tx,
+          seasonId,
+          seasonStartsAt: season.startsAt,
+          pauses: pausesForSchedule,
+          dryRun: dryRun,
+          requireAllPendingMatches: false,
+        });
+      });
+
+      return reply.status(200).send({
+        seasonId,
+        dryRun: dryRun,
+        endsAt: result.seasonEndsAt.toISOString(),
+      });
+    } catch (error) {
+      request.log.error(error, "Failed to create season pauses");
+      return reply.status(400).send({
+        error: error instanceof Error ? error.message : "Failed to create season pauses.",
+      });
+    }
   });
 
   fastify.post("/seasons/:seasonId/schedule", async (request, reply) => {

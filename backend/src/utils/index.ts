@@ -140,3 +140,7 @@ export function isPowerOfTwo(number: number) {
 export function ceilHalf(number: number) {
   return Math.ceil(number / 2);
 }
+
+export function sortByDateAsc<T extends { date: Date }>(items: T[]) {
+  return items.sort((a, b) => a.date.getTime() - b.date.getTime());
+}
