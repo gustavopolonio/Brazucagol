@@ -90,3 +90,7 @@
   - Distributing VIPs
   - Managing club members
   - Scheduling friendlies (future)
+
+## Code patterns
+- Do not abbreviate variable names. Example wrong: users.forEach(u -> ...)
+- All DB queries must be inside `repositories` layer
