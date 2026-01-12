@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { seasonPauses } from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
@@ -28,13 +28,23 @@ interface CreateSeasonPausesProps {
 }
 
 export async function createSeasonPauses({ db, seasonId, pauses }: CreateSeasonPausesProps) {
-  await db.insert(seasonPauses).values(
+  const insert = db.insert(seasonPauses).values(
     pauses.map((pause) => ({
       seasonId,
       date: pause.date,
       reason: pause.reason,
     }))
   );
+
+  await insert.onConflictDoUpdate({
+    target: [seasonPauses.seasonId, seasonPauses.date],
+    set: {
+      seasonId: sql`excluded.season_id`,
+      date: sql`excluded.date`,
+      reason: sql`excluded.reason`,
+      createdAt: sql`now()`,
+    },
+  });
 }
 
 interface GetSeasonPausesBySeasonIdProps {
