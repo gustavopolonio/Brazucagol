@@ -215,7 +215,7 @@ export const leagueStandings = pgTable(
       .notNull()
       .references(() => clubs.id, { onDelete: "cascade" }),
 
-    matchesPlayed: integer("played").notNull().default(0),
+    matchesPlayed: integer("matches_played").notNull().default(0),
     wins: integer("wins").notNull().default(0),
     draws: integer("draws").notNull().default(0),
     defeats: integer("defeats").notNull().default(0),
