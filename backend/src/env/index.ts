@@ -8,6 +8,7 @@ const envSchema = z.object({
   CLIENT_URL: z.url(),
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
+  MATCH_LIFECYCLE_WORKER_INTERVAL_MS: z.coerce.number().default(30000), // 30 sec
 });
 
 const _env = envSchema.safeParse(process.env);

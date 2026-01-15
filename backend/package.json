@@ -14,7 +14,8 @@
     "seed:clubs": "tsx --env-file .env src/scripts/seed-clubs.ts",
     "seed:cup-rounds": "tsx --env-file .env src/scripts/seed-cup-rounds.ts",
     "bootstrap-league": "tsx --env-file .env src/scripts/bootstrap-league.ts",
-    "bootstrap-cup": "tsx --env-file .env src/scripts/bootstrap-cup.ts"
+    "bootstrap-cup": "tsx --env-file .env src/scripts/bootstrap-cup.ts",
+    "start-match-lifecycle-worker": "tsx --env-file .env src/workers/matchLifecycleWorker.ts"
   },
   "keywords": [],
   "author": "",
