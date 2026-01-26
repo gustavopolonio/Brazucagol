@@ -94,3 +94,39 @@
 ## Code patterns
 - Do not abbreviate variable names. Example wrong: users.forEach(u -> ...)
 - All DB queries must be inside `repositories` layer
+
+## Cooldowns & Presence (Redis Rules)
+
+- All action cooldowns are player-centric (not match-centric).
+- Redis keys:
+  - `cooldown:v1:{actionType}:{playerId}` → string with TTL
+  - `gameplay:v1:online_players` → ZSET (score = lastSeenTimestamp, member = playerId)
+  - `auto_goal:v1:schedule` → ZSET (score = nextAutoGoalTimestamp, member = playerId)
+
+### Manual Actions (penalty, free_kick, trail)
+- Cooldown key exists → player cannot perform action
+- Cooldown key missing → player can perform action
+- Cooldown is created when:
+  - Player logs in (initialize if missing)
+  - Player performs the action (NX + TTL)
+
+### Auto Goals
+- Auto-goals are processed by a worker
+- Worker reads `auto_goal:v1:schedule`
+- When auto-goal happens:
+  - Next auto-goal timestamp is pushed forward
+- Auto-goals only occur if player is considered online
+
+### Online Presence
+- Player is online if:
+  - `lastSeenTimestamp >= now - ONLINE_WINDOW_MS`
+- Client sends heartbeat every ~30s
+- Heartbeat updates ZSET score
+
+### Offline Cleanup
+- Periodic worker removes players considered offline:
+  - Removes from `online_players`
+  - Removes from `auto_goal:schedule`
+  - Deletes manual cooldown keys
+- When player logs in again:
+  - All cooldowns start from the beginning
