@@ -5,6 +5,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
   PORT: z.coerce.number().default(3333),
   DATABASE_URL: z.url(),
+  REDIS_URL: z.string().min(1),
   CLIENT_URL: z.url(),
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
