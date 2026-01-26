@@ -1,8 +1,25 @@
 import { and, asc, desc, eq } from "drizzle-orm";
-import { clubs, leagueDivisions, leagueStandings } from "@/db/schema";
+import {
+  clubs,
+  leagueDivisions,
+  leagueStandings,
+  type Club,
+  type LeagueStanding,
+} from "@/db/schema";
 import { db } from "@/lib/drizzle";
 
-export async function getLeagueDivisionStandings(leagueId: string, divisionNumber: number) {
+export type LeagueDivisionStandingRow = Pick<
+  LeagueStanding,
+  "points" | "matchesPlayed" | "wins" | "draws" | "defeats" | "goalsFor" | "goalsAgainst" | "clubId"
+> & {
+  clubName: Club["name"];
+  clubLogoUrl: Club["logoUrl"];
+};
+
+export async function getLeagueDivisionStandings(
+  leagueId: string,
+  divisionNumber: number
+): Promise<LeagueDivisionStandingRow[]> {
   const standings = await db
     .select({
       points: leagueStandings.points,

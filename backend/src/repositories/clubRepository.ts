@@ -1,8 +1,10 @@
 import { inArray } from "drizzle-orm";
-import { clubs } from "@/db/schema";
+import { clubs, type Club } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 
-export async function getClubsByIds(clubIds: string[]) {
+export type ClubPreviewRow = Pick<Club, "id" | "name" | "logoUrl">;
+
+export async function getClubsByIds(clubIds: string[]): Promise<ClubPreviewRow[]> {
   const clubsQuery = await db
     .select({
       id: clubs.id,

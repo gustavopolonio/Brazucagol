@@ -293,7 +293,6 @@ export const matches = pgTable(
 
     homeGoals: integer("home_goals").default(0).notNull(),
     awayGoals: integer("away_goals").default(0).notNull(),
-    // Store the date with the correct hour to start? Or just the day/month/year/timestemp? -> I think it's better to don't store the correct hour here
     date: timestamp("date", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -420,10 +419,14 @@ export type Level = typeof levels.$inferSelect;
 export type NewLevel = typeof levels.$inferInsert;
 export type Season = typeof seasons.$inferSelect;
 export type NewSeason = typeof seasons.$inferInsert;
+export type SeasonPause = typeof seasonPauses.$inferSelect;
+export type NewSeasonPause = typeof seasonPauses.$inferInsert;
 export type Competition = typeof competitions.$inferSelect;
 export type NewCompetition = typeof competitions.$inferInsert;
 export type LeagueDivision = typeof leagueDivisions.$inferSelect;
 export type NewLeagueDivision = typeof leagueDivisions.$inferInsert;
+export type LeagueStanding = typeof leagueStandings.$inferSelect;
+export type NewLeagueStanding = typeof leagueStandings.$inferInsert;
 export type CupRound = typeof cupRounds.$inferSelect;
 export type NewCupRound = typeof cupRounds.$inferInsert;
 export type Club = typeof clubs.$inferSelect;

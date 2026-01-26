@@ -1,8 +1,23 @@
 import { and, asc, eq } from "drizzle-orm";
-import { competitions, leagueDivisions, matches } from "@/db/schema";
+import { competitions, leagueDivisions, matches, type Competition, type Match } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 
-export async function getLeagueById(leagueId: string) {
+export type LeagueMatchRow = Pick<
+  Match,
+  | "id"
+  | "competitionId"
+  | "divisionId"
+  | "leagueRound"
+  | "status"
+  | "date"
+  | "homeGoals"
+  | "awayGoals"
+> & {
+  homeClubId: Match["clubHomeId"];
+  awayClubId: Match["clubAwayId"];
+};
+
+export async function getLeagueById(leagueId: string): Promise<Competition | undefined> {
   const league = await db.query.competitions.findFirst({
     where: and(eq(competitions.id, leagueId), eq(competitions.type, "league")),
   });
@@ -10,7 +25,10 @@ export async function getLeagueById(leagueId: string) {
   return league;
 }
 
-export async function getLeagueMatches(leagueId: string, divisionNumber: number) {
+export async function getLeagueMatches(
+  leagueId: string,
+  divisionNumber: number
+): Promise<LeagueMatchRow[]> {
   const division = await db.query.leagueDivisions.findFirst({
     where: and(
       eq(leagueDivisions.competitionId, leagueId),

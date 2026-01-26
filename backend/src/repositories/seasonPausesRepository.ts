@@ -1,8 +1,11 @@
 import { and, asc, eq, sql } from "drizzle-orm";
-import { seasonPauses } from "@/db/schema";
+import { seasonPauses, type SeasonPause } from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
 type DbClient = (typeof import("@/lib/drizzle"))["db"];
+
+export type SeasonPauseIdRow = Pick<SeasonPause, "id">;
+export type SeasonPauseRow = Pick<SeasonPause, "id" | "date" | "reason">;
 
 interface DeleteSeasonPausesBySeasonIdProps {
   db: Transaction;
@@ -12,7 +15,7 @@ interface DeleteSeasonPausesBySeasonIdProps {
 export async function deleteSeasonPausesBySeasonId({
   db,
   seasonId,
-}: DeleteSeasonPausesBySeasonIdProps) {
+}: DeleteSeasonPausesBySeasonIdProps): Promise<void> {
   await db.delete(seasonPauses).where(eq(seasonPauses.seasonId, seasonId));
 }
 
@@ -22,7 +25,11 @@ interface DeleteSeasonPauseByIdProps {
   pauseId: string;
 }
 
-export async function deleteSeasonPauseById({ db, seasonId, pauseId }: DeleteSeasonPauseByIdProps) {
+export async function deleteSeasonPauseById({
+  db,
+  seasonId,
+  pauseId,
+}: DeleteSeasonPauseByIdProps): Promise<SeasonPauseIdRow[]> {
   return db
     .delete(seasonPauses)
     .where(and(eq(seasonPauses.id, pauseId), eq(seasonPauses.seasonId, seasonId)))
@@ -40,7 +47,11 @@ interface CreateSeasonPausesProps {
   pauses: CreateSeasonPauseInput[];
 }
 
-export async function createSeasonPauses({ db, seasonId, pauses }: CreateSeasonPausesProps) {
+export async function createSeasonPauses({
+  db,
+  seasonId,
+  pauses,
+}: CreateSeasonPausesProps): Promise<void> {
   const insert = db.insert(seasonPauses).values(
     pauses.map((pause) => ({
       seasonId,
@@ -65,7 +76,10 @@ interface GetSeasonPausesBySeasonIdProps {
   seasonId: string;
 }
 
-export async function getSeasonPausesBySeasonId({ db, seasonId }: GetSeasonPausesBySeasonIdProps) {
+export async function getSeasonPausesBySeasonId({
+  db,
+  seasonId,
+}: GetSeasonPausesBySeasonIdProps): Promise<SeasonPauseRow[]> {
   return db
     .select({
       id: seasonPauses.id,

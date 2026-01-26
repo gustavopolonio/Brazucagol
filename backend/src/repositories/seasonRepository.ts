@@ -1,15 +1,36 @@
 import { and, eq, gte, isNotNull, lt, ne, or, sql } from "drizzle-orm";
-import { competitions, cupRounds, matches, seasons, Competition } from "@/db/schema";
+import {
+  competitions,
+  cupRounds,
+  matches,
+  seasons,
+  type Competition,
+  type CupRound,
+  type Match,
+  type Season,
+} from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
 type DbClient = (typeof import("@/lib/drizzle"))["db"];
+
+export type SeasonIdRow = Pick<Season, "id">;
+export type SeasonStartsAtRow = Pick<Season, "startsAt">;
+export type SeasonCompetitionRow = Pick<Competition, "id" | "type">;
+export type SeasonMatchDateRow = Pick<Match, "date">;
+export type SeasonLeagueRoundRow = Pick<Match, "competitionId" | "leagueRound">;
+export type SeasonCupRoundRow = Pick<Match, "competitionId" | "cupRoundId"> & {
+  stage: CupRound["stage"];
+};
 
 interface GetSeasonByIdProps {
   db: Transaction | DbClient;
   seasonId: string;
 }
 
-export async function getSeasonById({ db, seasonId }: GetSeasonByIdProps) {
+export async function getSeasonById({
+  db,
+  seasonId,
+}: GetSeasonByIdProps): Promise<SeasonIdRow | null> {
   const rows = await db.select({ id: seasons.id }).from(seasons).where(eq(seasons.id, seasonId));
 
   return rows[0] ?? null;
@@ -20,7 +41,10 @@ interface GetSeasonStartsAtByIdProps {
   seasonId: string;
 }
 
-export async function getSeasonStartsAtById({ db, seasonId }: GetSeasonStartsAtByIdProps) {
+export async function getSeasonStartsAtById({
+  db,
+  seasonId,
+}: GetSeasonStartsAtByIdProps): Promise<SeasonStartsAtRow | null> {
   const rows = await db
     .select({ startsAt: seasons.startsAt })
     .from(seasons)
@@ -37,9 +61,7 @@ interface GetSeasonCompetitionsBySeasonIdProps {
 export async function getSeasonCompetitionsBySeasonId({
   db,
   seasonId,
-}: GetSeasonCompetitionsBySeasonIdProps): Promise<
-  Array<{ id: string; type: Competition["type"] }>
-> {
+}: GetSeasonCompetitionsBySeasonIdProps): Promise<SeasonCompetitionRow[]> {
   const seasonCompetitions = await db
     .select({
       id: competitions.id,
@@ -89,7 +111,7 @@ export async function getSeasonNonPendingMatchesByDateRanges({
   db,
   seasonId,
   ranges,
-}: GetSeasonNonPendingMatchesByDateRangesProps): Promise<Array<{ date: Date }>> {
+}: GetSeasonNonPendingMatchesByDateRangesProps): Promise<SeasonMatchDateRow[]> {
   if (ranges.length === 0) return [];
 
   const rangeConditions = ranges.map((range) =>
@@ -118,9 +140,7 @@ interface GetSeasonLeagueRoundsBySeasonIdProps {
 export async function getSeasonLeagueRoundsBySeasonId({
   db,
   seasonId,
-}: GetSeasonLeagueRoundsBySeasonIdProps): Promise<
-  Array<{ competitionId: string | null; leagueRound: number | null }>
-> {
+}: GetSeasonLeagueRoundsBySeasonIdProps): Promise<SeasonLeagueRoundRow[]> {
   const rows = await db
     .select({
       competitionId: matches.competitionId,
@@ -148,9 +168,7 @@ interface GetSeasonCupRoundsBySeasonIdProps {
 export async function getSeasonCupRoundsBySeasonId({
   db,
   seasonId,
-}: GetSeasonCupRoundsBySeasonIdProps): Promise<
-  Array<{ competitionId: string | null; cupRoundId: string | null; stage: number }>
-> {
+}: GetSeasonCupRoundsBySeasonIdProps): Promise<SeasonCupRoundRow[]> {
   const rows = await db
     .select({
       competitionId: matches.competitionId,
@@ -184,7 +202,7 @@ export async function updateSeasonScheduleDates({
   seasonId,
   startsAt,
   endsAt,
-}: UpdateSeasonScheduleDatesProps) {
+}: UpdateSeasonScheduleDatesProps): Promise<void> {
   await db.update(seasons).set({ startsAt, endsAt }).where(eq(seasons.id, seasonId));
 }
 
@@ -200,7 +218,7 @@ export async function updatePendingLeagueMatchDate({
   competitionId,
   leagueRound,
   date,
-}: UpdatePendingLeagueMatchesDateProps) {
+}: UpdatePendingLeagueMatchesDateProps): Promise<void> {
   await db
     .update(matches)
     .set({ date })
@@ -226,7 +244,7 @@ export async function updatePendingCupMatchDate({
   competitionId,
   cupRoundId,
   date,
-}: UpdatePendingCupMatchesDateProps) {
+}: UpdatePendingCupMatchesDateProps): Promise<void> {
   await db
     .update(matches)
     .set({ date })
