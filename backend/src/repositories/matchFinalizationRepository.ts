@@ -1,21 +1,28 @@
 import { and, eq, sql } from "drizzle-orm";
-import { leagueStandings, matches, playerRoundStats, playerTotalStats } from "@/db/schema";
+import {
+  leagueStandings,
+  matches,
+  playerRoundStats,
+  playerTotalStats,
+  type Match,
+} from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
-export type FinalizableMatch = {
-  id: string;
-  status: "pending" | "in_progress" | "finished";
-  type: "league" | "cup" | "friendly";
-  competitionId: string | null;
-  divisionId: string | null;
-  clubHomeId: string | null;
-  clubAwayId: string | null;
-  homeFromMatchId: string | null;
-  awayFromMatchId: string | null;
-  homeGoals: number;
-  awayGoals: number;
-  winnerClubId: string | null;
-};
+export type FinalizableMatch = Pick<
+  Match,
+  | "id"
+  | "status"
+  | "type"
+  | "competitionId"
+  | "divisionId"
+  | "clubHomeId"
+  | "clubAwayId"
+  | "homeFromMatchId"
+  | "awayFromMatchId"
+  | "homeGoals"
+  | "awayGoals"
+  | "winnerClubId"
+>;
 
 interface LockRoundMatchesForFinalizeProps {
   db: Transaction;
@@ -55,7 +62,11 @@ interface UpdateMatchWinnerProps {
   winnerClubId: string | null;
 }
 
-export async function updateMatchWinner({ db, matchId, winnerClubId }: UpdateMatchWinnerProps) {
+export async function updateMatchWinner({
+  db,
+  matchId,
+  winnerClubId,
+}: UpdateMatchWinnerProps): Promise<void> {
   await db
     .update(matches)
     .set({ winnerClubId: winnerClubId })
@@ -72,7 +83,7 @@ interface AggregatePlayerTotalsForMatchProps {
 export async function aggregatePlayerTotalStatsForMatch({
   db,
   matchId,
-}: AggregatePlayerTotalsForMatchProps) {
+}: AggregatePlayerTotalsForMatchProps): Promise<void> {
   // Idempotency: only aggregate if the match is still in progress.
   await db.execute(sql`
     with match_context as (
@@ -119,7 +130,7 @@ interface ApplyLeagueStandingsForMatchProps {
 export async function applyLeagueStandingsForMatch({
   db,
   matchId,
-}: ApplyLeagueStandingsForMatchProps) {
+}: ApplyLeagueStandingsForMatchProps): Promise<void> {
   // Idempotency: standings move only when the match is still in progress.
 
   // Home club
@@ -211,7 +222,7 @@ export async function ensureCupWinnerPropagation({
   db,
   matchId,
   winnerClubId,
-}: EnsureCupWinnerPropagationProps) {
+}: EnsureCupWinnerPropagationProps): Promise<void> {
   const homeConflict = await db.execute(sql`
     select ${matches.id} as "id"
     from ${matches}

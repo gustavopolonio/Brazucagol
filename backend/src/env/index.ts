@@ -13,6 +13,10 @@ const envSchema = z.object({
   ONLINE_WINDOW_MS: z.coerce.number().int().positive().default(60000), // 60 sec
   COOLDOWN_STANDARD_SECONDS: z.coerce.number().int().positive().default(600), // 10 min
   COOLDOWN_VIP_SECONDS: z.coerce.number().int().positive().default(300), // 5 min
+  GOAL_PROBABILITY_AUTO: z.coerce.number().min(0).max(1),
+  GOAL_PROBABILITY_PENALTY: z.coerce.number().min(0).max(1),
+  GOAL_PROBABILITY_FREE_KICK: z.coerce.number().min(0).max(1),
+  GOAL_PROBABILITY_TRAIL: z.coerce.number().min(0).max(1),
 });
 
 const _env = envSchema.safeParse(process.env);
