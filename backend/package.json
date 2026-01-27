@@ -17,7 +17,8 @@
     "bootstrap-cup": "tsx --env-file .env src/scripts/bootstrap-cup.ts",
     "start-match-lifecycle-worker": "tsx --env-file .env src/workers/matchLifecycleWorker.ts",
     "start-auto-goal-worker": "tsx --env-file .env src/workers/autoGoalWorker.ts",
-    "start-presence-cleanup": "tsx --env-file .env src/workers/presenceCleanupWorker.ts"
+    "start-presence-cleanup": "tsx --env-file .env src/workers/presenceCleanupWorker.ts",
+    "start-leaderboard-snapshot-worker": "tsx --env-file .env src/workers/leaderboardSnapshotWorker.ts"
   },
   "keywords": [],
   "author": "",

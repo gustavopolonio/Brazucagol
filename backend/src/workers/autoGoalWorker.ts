@@ -14,11 +14,12 @@ import {
 import { getPlayerById } from "@/repositories/playerRepository";
 import { clearGameplayPresence, isPlayerOffline } from "@/services/gameplayPresenceStore";
 import { resolveScoringSide } from "@/services/scoringSide";
+import { updateLeaderboardsForMatchGoal } from "@/services/leaderboardService";
 import { AUTO_GOAL_SCHEDULE_KEY } from "@/redis/keys/gameplayPresence";
 import { getNextAutoGoalTimestamp, resolveCooldownTtlInSeconds } from "@/utils/gameplay";
 
 type AutoGoalProcessResult =
-  | { status: "scored"; cooldownTtlInSeconds: number }
+  | { status: "scored"; cooldownTtlInSeconds: number; matchId: string }
   | { status: "match_not_found" }
   | { status: "clear_presence" };
 
@@ -95,7 +96,7 @@ async function processAutoGoalForPlayer(playerId: string, now: number): Promise<
       });
 
       const cooldownTtlInSeconds = resolveCooldownTtlInSeconds(player.vipExpiresAt, currentTime);
-      return { status: "scored", cooldownTtlInSeconds };
+      return { status: "scored", cooldownTtlInSeconds, matchId: match.id };
     });
 
     if (result.status === "scored") {
@@ -105,6 +106,7 @@ async function processAutoGoalForPlayer(playerId: string, now: number): Promise<
       );
 
       await redisClient.zadd(AUTO_GOAL_SCHEDULE_KEY, nextAutoGoalTimestamp, playerId);
+      await updateLeaderboardsForMatchGoal({ playerId, matchId: result.matchId });
     }
 
     if (result.status === "clear_presence") {

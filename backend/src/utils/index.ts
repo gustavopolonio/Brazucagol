@@ -90,6 +90,15 @@ export function toZonedDayKey(date: Date) {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+// Returns -> YYYYMMDDHH
+export function toZonedHourKey(date: Date) {
+  const { year, month, day, hour } = getZonedParts(date);
+
+  return `${year}${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}${String(
+    hour
+  ).padStart(2, "0")}`;
+}
+
 export function toRoundStartDate(date: Date) {
   const { year, month, day } = getZonedParts(date);
 

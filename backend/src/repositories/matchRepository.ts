@@ -1,5 +1,5 @@
-import { eq, sql } from "drizzle-orm";
-import { matches, type Match } from "@/db/schema";
+import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { competitions, matches, type Match } from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
 type DbClient = (typeof import("@/lib/drizzle"))["db"];
@@ -10,6 +10,20 @@ export type MatchRow = Pick<
 >;
 
 export type LockedRoundMatch = MatchRow;
+
+export type MatchLeaderboardContext = {
+  matchId: string;
+  matchType: Match["type"];
+  competitionId: string | null;
+  leagueRound: number | null;
+  cupRoundId: string | null;
+  seasonId: string | null;
+};
+
+export type InProgressLeagueRound = {
+  competitionId: string;
+  leagueRound: number;
+};
 
 interface GetEarliestPendingRoundDateProps {
   db: Transaction | DbClient;
@@ -190,4 +204,109 @@ export async function incrementMatchGoals({
   });
 
   return rows[0];
+}
+
+interface GetMatchLeaderboardContextByIdProps {
+  db: Transaction | DbClient;
+  matchId: string;
+}
+
+export async function getMatchLeaderboardContextById({
+  db,
+  matchId,
+}: GetMatchLeaderboardContextByIdProps): Promise<MatchLeaderboardContext | null> {
+  const matchRows = await db
+    .select({
+      matchId: matches.id,
+      matchType: matches.type,
+      competitionId: matches.competitionId,
+      leagueRound: matches.leagueRound,
+      cupRoundId: matches.cupRoundId,
+      seasonId: competitions.seasonId,
+    })
+    .from(matches)
+    .leftJoin(competitions, eq(matches.competitionId, competitions.id))
+    .where(eq(matches.id, matchId))
+    .limit(1);
+
+  return matchRows[0] ?? null;
+}
+
+interface GetInProgressMatchIdsProps {
+  db: Transaction | DbClient;
+}
+
+export async function getInProgressMatchIds({ db }: GetInProgressMatchIdsProps): Promise<string[]> {
+  const matchRows = await db
+    .select({ matchId: matches.id })
+    .from(matches)
+    .where(eq(matches.status, "in_progress"));
+
+  return matchRows.map((row) => row.matchId);
+}
+
+interface GetInProgressLeagueRoundProps {
+  db: Transaction | DbClient;
+}
+
+export async function getInProgressLeagueRound({
+  db,
+}: GetInProgressLeagueRoundProps): Promise<InProgressLeagueRound | null> {
+  const leagueRoundRows = await db
+    .select({
+      competitionId: matches.competitionId,
+      leagueRound: matches.leagueRound,
+    })
+    .from(matches)
+    .where(
+      and(
+        eq(matches.status, "in_progress"),
+        eq(matches.type, "league"),
+        isNotNull(matches.competitionId),
+        isNotNull(matches.leagueRound)
+      )
+    )
+    .groupBy(matches.competitionId, matches.leagueRound)
+    .orderBy(desc(matches.date))
+    .limit(1);
+
+  return leagueRoundRows[0] ?? null;
+}
+
+interface GetInProgressCupRoundIdProps {
+  db: Transaction | DbClient;
+}
+
+export async function getInProgressCupRoundId({
+  db,
+}: GetInProgressCupRoundIdProps): Promise<string | null> {
+  const cupRoundRows = await db
+    .select({
+      cupRoundId: matches.cupRoundId,
+    })
+    .from(matches)
+    .where(
+      and(eq(matches.status, "in_progress"), eq(matches.type, "cup"), isNotNull(matches.cupRoundId))
+    )
+    .groupBy(matches.cupRoundId);
+
+  return cupRoundRows[0]?.cupRoundId ?? null;
+}
+
+interface GetInProgressSeasonIdProps {
+  db: Transaction | DbClient;
+}
+
+export async function getInProgressSeasonId({
+  db,
+}: GetInProgressSeasonIdProps): Promise<string | null> {
+  const seasonRows = await db
+    .select({ seasonId: competitions.seasonId })
+    .from(matches)
+    .innerJoin(competitions, eq(matches.competitionId, competitions.id))
+    .where(eq(matches.status, "in_progress"))
+    .orderBy(desc(matches.date))
+    .limit(1);
+
+  return seasonRows[0]?.seasonId ?? null;
 }

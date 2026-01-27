@@ -17,6 +17,7 @@ import {
 import { getPlayerTotalStats } from "@/repositories/playerTotalStatsRepository";
 import { GoalActionType } from "@/types/goal.types";
 import { resolveScoringSide } from "@/services/scoringSide";
+import { updateLeaderboardsForMatchGoal } from "@/services/leaderboardService";
 
 type GoalAttemptResolved = {
   matchId: string;
@@ -103,7 +104,7 @@ export async function attemptGoalAction({
       return;
     }
 
-    return await db.transaction(async (transaction) => {
+    const goalAttemptResult: GoalActionResult = await db.transaction(async (transaction) => {
       const match = await getMatchByIdForUpdate({ db: transaction, matchId });
 
       if (!match) {
@@ -246,6 +247,12 @@ export async function attemptGoalAction({
         effectiveTotalGoals,
       };
     });
+
+    if (goalAttemptResult?.status === "scored") {
+      await updateLeaderboardsForMatchGoal({ playerId, matchId });
+    }
+
+    return goalAttemptResult;
   } catch (error) {
     if (cooldownToken) {
       // Roll back the cooldown if the transaction fails after acquisition -> player has the right to kick again, instantly
