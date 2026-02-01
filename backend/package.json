@@ -18,7 +18,9 @@
     "start-match-lifecycle-worker": "tsx --env-file .env src/workers/matchLifecycleWorker.ts",
     "start-auto-goal-worker": "tsx --env-file .env src/workers/autoGoalWorker.ts",
     "start-presence-cleanup": "tsx --env-file .env src/workers/presenceCleanupWorker.ts",
-    "start-leaderboard-snapshot-worker": "tsx --env-file .env src/workers/leaderboardSnapshotWorker.ts"
+    "start-leaderboard-snapshot-worker": "tsx --env-file .env src/workers/leaderboardSnapshotWorker.ts",
+    "start-online-players-count": "tsx --env-file .env src/workers/onlinePlayersCountWorker.ts",
+    "start-workers": "tsx --env-file .env src/workers/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +34,7 @@
     "fastify": "^5.6.2",
     "ioredis": "^5.9.1",
     "pg": "^8.16.3",
+    "socket.io": "^4.7.5",
     "zod": "^4.2.1"
   },
   "devDependencies": {
@@ -44,6 +47,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "prettier": "^3.7.4",
+    "socket.io-client": "^4.8.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

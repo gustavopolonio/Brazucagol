@@ -1,6 +1,5 @@
 import { redisClient } from "@/lib/redis";
 import {
-  buildLeaderboardCacheMatchKey,
   buildLeaderboardCacheRoundKey,
   LEADERBOARD_CACHE_HOUR_KEY,
   LEADERBOARD_CACHE_SEASON_KEY,
@@ -34,12 +33,5 @@ export async function getCachedRoundLeaderboard(
   roundId: string
 ): Promise<LeaderboardSnapshot | null> {
   const cacheKey = buildLeaderboardCacheRoundKey(roundId);
-  return loadCachedLeaderboard(cacheKey);
-}
-
-export async function getCachedMatchLeaderboard(
-  matchId: string
-): Promise<LeaderboardSnapshot | null> {
-  const cacheKey = buildLeaderboardCacheMatchKey(matchId);
   return loadCachedLeaderboard(cacheKey);
 }

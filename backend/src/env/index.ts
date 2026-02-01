@@ -13,8 +13,8 @@ const envSchema = z.object({
   AUTO_GOAL_WORKER_INTERVAL_MS: z.coerce.number().default(2000), // 2 sec
   PRESENCE_CLEANUP_INTERVAL_MS: z.coerce.number().default(60000), // 60 sec
   LEADERBOARD_SNAPSHOT_INTERVAL_MS: z.coerce.number().default(10000), // 10 sec
+  ONLINE_PLAYERS_COUNT_INTERVAL_MS: z.coerce.number().default(60000), // 60 sec
   HOUR_LEADERBOARD_TTL_SECONDS: z.coerce.number().int().positive().default(7200), // 2 hours
-  MATCH_LEADERBOARD_TTL_SECONDS: z.coerce.number().int().positive().default(172800), // 2 days
   ROUND_LEADERBOARD_TTL_SECONDS: z.coerce.number().int().positive().default(604800), // 7 days
   ONLINE_WINDOW_MS: z.coerce.number().int().positive().default(60000), // 60 sec
   COOLDOWN_STANDARD_SECONDS: z.coerce.number().int().positive().default(600), // 10 min

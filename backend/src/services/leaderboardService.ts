@@ -3,21 +3,23 @@ import { db } from "@/lib/drizzle";
 import { redisClient } from "@/lib/redis";
 import {
   buildHourlyLeaderboardKey,
-  buildLeaderboardCacheMatchKey,
   buildLeaderboardCacheRoundKey,
-  buildMatchLeaderboardKey,
   buildRoundLeaderboardKey,
   buildSeasonLeaderboardKey,
   LEADERBOARD_CACHE_HOUR_KEY,
   LEADERBOARD_CACHE_SEASON_KEY,
 } from "@/redis/keys/leaderboard";
-import { getMatchLeaderboardContextById } from "@/repositories/matchRepository";
+import {
+  getCachedHourLeaderboard,
+  getCachedRoundLeaderboard,
+  getCachedSeasonLeaderboard,
+} from "@/repositories/leaderboardRepository";
+import { getMatchCompetitionContextById } from "@/repositories/matchRepository";
 import { LeaderboardEntry, LeaderboardSnapshot } from "@/types/leaderboard.types";
 import { toZonedHourKey } from "@/utils";
 
 interface UpdateLeaderboardsOnGoalProps {
   playerId: string;
-  matchId: string;
   seasonId: string;
   roundId: string | null;
 }
@@ -34,7 +36,6 @@ export function buildLeagueRoundId({
 
 export async function updateLeaderboardsOnGoal({
   playerId,
-  matchId,
   seasonId,
   roundId,
 }: UpdateLeaderboardsOnGoalProps): Promise<void> {
@@ -42,7 +43,6 @@ export async function updateLeaderboardsOnGoal({
   const hourLeaderboardKey = buildHourlyLeaderboardKey(hourKey);
   const seasonLeaderboardKey = buildSeasonLeaderboardKey(seasonId);
   const roundLeaderboardKey = buildRoundLeaderboardKey(roundId);
-  const matchLeaderboardKey = buildMatchLeaderboardKey(matchId);
 
   try {
     const pipeline = redisClient
@@ -51,9 +51,7 @@ export async function updateLeaderboardsOnGoal({
       .expire(hourLeaderboardKey, env.HOUR_LEADERBOARD_TTL_SECONDS)
       .zincrby(roundLeaderboardKey, 1, playerId)
       .expire(roundLeaderboardKey, env.ROUND_LEADERBOARD_TTL_SECONDS)
-      .zincrby(seasonLeaderboardKey, 1, playerId)
-      .zincrby(matchLeaderboardKey, 1, playerId)
-      .expire(matchLeaderboardKey, env.MATCH_LEADERBOARD_TTL_SECONDS);
+      .zincrby(seasonLeaderboardKey, 1, playerId);
 
     await pipeline.exec();
   } catch (error) {
@@ -109,25 +107,24 @@ export async function updateLeaderboardsForMatchGoal({
   matchId,
 }: UpdateLeaderboardsForMatchGoalProps): Promise<void> {
   try {
-    const matchLeaderboardContext = await getMatchLeaderboardContextById({ db, matchId });
+    const matchCompetitionContext = await getMatchCompetitionContextById({ db, matchId });
 
-    if (!matchLeaderboardContext?.seasonId) {
+    if (!matchCompetitionContext?.seasonId) {
       console.error(`Leaderboard update skipped for match ${matchId}: missing season.`);
       return;
     }
 
     const roundId =
-      matchLeaderboardContext.matchType === "league"
+      matchCompetitionContext.matchType === "league"
         ? buildLeagueRoundId({
-            competitionId: matchLeaderboardContext.competitionId,
-            leagueRound: matchLeaderboardContext.leagueRound,
+            competitionId: matchCompetitionContext.competitionId,
+            leagueRound: matchCompetitionContext.leagueRound,
           })
-        : matchLeaderboardContext.cupRoundId;
+        : matchCompetitionContext.cupRoundId;
 
     await updateLeaderboardsOnGoal({
       playerId,
-      matchId,
-      seasonId: matchLeaderboardContext.seasonId,
+      seasonId: matchCompetitionContext.seasonId,
       roundId,
     });
   } catch (error) {
@@ -176,18 +173,16 @@ export async function refreshRoundLeaderboardSnapshot({
   });
 }
 
-interface RefreshMatchLeaderboardSnapshotProps {
-  matchId: string;
+export async function getCurrentHourLeaderboardSnapshot(): Promise<LeaderboardSnapshot | null> {
+  return getCachedHourLeaderboard();
 }
 
-export async function refreshMatchLeaderboardSnapshot({
-  matchId,
-}: RefreshMatchLeaderboardSnapshotProps): Promise<void> {
-  const matchLeaderboardKey = buildMatchLeaderboardKey(matchId);
-  const matchCacheKey = buildLeaderboardCacheMatchKey(matchId);
+export async function getCurrentSeasonLeaderboardSnapshot(): Promise<LeaderboardSnapshot | null> {
+  return getCachedSeasonLeaderboard();
+}
 
-  await refreshLeaderboardSnapshot({
-    leaderboardKey: matchLeaderboardKey,
-    cacheKey: matchCacheKey,
-  });
+export async function getRoundLeaderboardSnapshot(
+  roundId: string
+): Promise<LeaderboardSnapshot | null> {
+  return getCachedRoundLeaderboard(roundId);
 }

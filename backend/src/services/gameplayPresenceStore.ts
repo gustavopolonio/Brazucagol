@@ -6,7 +6,11 @@ import { GoalActionType } from "@/types/goal.types";
 import { db } from "@/lib/drizzle";
 import { isFiniteNumber } from "@/utils";
 import { getNextAutoGoalTimestamp, resolveCooldownTtlInSeconds } from "@/utils/gameplay";
-import { AUTO_GOAL_SCHEDULE_KEY, GAMEPLAY_ONLINE_PLAYERS_KEY } from "@/redis/keys/gameplayPresence";
+import {
+  AUTO_GOAL_SCHEDULE_KEY,
+  GAMEPLAY_ONLINE_PLAYERS_KEY,
+  ONLINE_PLAYERS_COUNT_CACHE_KEY,
+} from "@/redis/keys/gameplayPresence";
 
 const MANUAL_COOLDOWN_ACTIONS: GoalActionType[] = ["penalty", "free_kick", "trail"];
 
@@ -93,4 +97,31 @@ export async function isPlayerOffline(
   }
 
   return lastSeenTimestamp < now - env.ONLINE_WINDOW_MS;
+}
+
+export async function getOnlinePlayersCount(now: number = Date.now()): Promise<number> {
+  try {
+    const minScore = now - env.ONLINE_WINDOW_MS;
+    const count = await redisClient.zcount(GAMEPLAY_ONLINE_PLAYERS_KEY, minScore, "+inf");
+    return count;
+  } catch (error) {
+    console.error("Failed to load online players count", error);
+    return 0;
+  }
+}
+
+export async function getCachedOnlinePlayersCount(): Promise<number> {
+  try {
+    const cachedValue = await redisClient.get(ONLINE_PLAYERS_COUNT_CACHE_KEY);
+
+    if (!cachedValue) {
+      return 0;
+    }
+
+    const count = Number(cachedValue);
+    return Number.isFinite(count) ? count : 0;
+  } catch (error) {
+    console.error("Failed to load cached online players count", error);
+    return 0;
+  }
 }

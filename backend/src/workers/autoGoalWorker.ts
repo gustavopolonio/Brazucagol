@@ -12,14 +12,32 @@ import {
   incrementPlayerRoundStatsColumns,
 } from "@/repositories/playerRoundStatsRepository";
 import { getPlayerById } from "@/repositories/playerRepository";
+import { getLevelForTotalGoals } from "@/repositories/levelsRepository";
+import { getPlayerTotalStats } from "@/repositories/playerTotalStatsRepository";
 import { clearGameplayPresence, isPlayerOffline } from "@/services/gameplayPresenceStore";
 import { resolveScoringSide } from "@/services/scoringSide";
 import { updateLeaderboardsForMatchGoal } from "@/services/leaderboardService";
 import { AUTO_GOAL_SCHEDULE_KEY } from "@/redis/keys/gameplayPresence";
+import { AUTO_GOAL_SCORED_CHANNEL } from "@/redis/keys/autoGoal";
 import { getNextAutoGoalTimestamp, resolveCooldownTtlInSeconds } from "@/utils/gameplay";
+import { updatePlayerLevel } from "@/repositories/playerRepository";
 
 type AutoGoalProcessResult =
-  | { status: "scored"; cooldownTtlInSeconds: number; matchId: string }
+  | {
+      status: "scored";
+      cooldownTtlInSeconds: number;
+      matchId: string;
+      goalResult: {
+        status: "scored";
+        matchId: string;
+        playerId: string;
+        actionType: "auto";
+        homeGoals: number;
+        awayGoals: number;
+        playerLevel: number;
+        effectiveTotalGoals: number;
+      };
+    }
   | { status: "match_not_found" }
   | { status: "clear_presence" };
 
@@ -82,21 +100,68 @@ async function processAutoGoalForPlayer(playerId: string, now: number): Promise<
         await createPlayerRoundStats({ db: transaction, playerId, matchId: match.id });
       }
 
-      await incrementPlayerRoundStatsColumns({
+      const updatedPlayerRoundStats = await incrementPlayerRoundStatsColumns({
         db: transaction,
         playerId,
         matchId: match.id,
         columnNames: ["autoGoalAttempts", "autoGoal"],
       });
 
-      await incrementMatchGoals({
+      const updatedMatch = await incrementMatchGoals({
         db: transaction,
         matchId: match.id,
         scoringSide,
       });
 
+      const playerTotalStats = await getPlayerTotalStats({ db: transaction, playerId });
+
+      if (!playerTotalStats) {
+        throw new Error("Player total stats not found.");
+      }
+
+      const effectiveTotalGoals =
+        playerTotalStats.autoGoal +
+        playerTotalStats.penaltyGoal +
+        playerTotalStats.freeKickGoal +
+        playerTotalStats.trailGoal +
+        updatedPlayerRoundStats.autoGoal +
+        updatedPlayerRoundStats.penaltyGoal +
+        updatedPlayerRoundStats.freeKickGoal +
+        updatedPlayerRoundStats.trailGoal;
+
+      const nextLevel = await getLevelForTotalGoals({
+        db: transaction,
+        totalGoals: effectiveTotalGoals,
+      });
+
+      let playerLevel = player.level;
+
+      if (nextLevel && nextLevel.id > player.level) {
+        await updatePlayerLevel({
+          db: transaction,
+          playerId,
+          level: nextLevel.id,
+        });
+        playerLevel = nextLevel.id;
+      }
+
       const cooldownTtlInSeconds = resolveCooldownTtlInSeconds(player.vipExpiresAt, currentTime);
-      return { status: "scored", cooldownTtlInSeconds, matchId: match.id };
+
+      return {
+        status: "scored",
+        cooldownTtlInSeconds,
+        matchId: match.id,
+        goalResult: {
+          status: "scored",
+          matchId: match.id,
+          playerId,
+          actionType: "auto",
+          homeGoals: updatedMatch.homeGoals,
+          awayGoals: updatedMatch.awayGoals,
+          playerLevel,
+          effectiveTotalGoals,
+        },
+      };
     });
 
     if (result.status === "scored") {
@@ -107,6 +172,11 @@ async function processAutoGoalForPlayer(playerId: string, now: number): Promise<
 
       await redisClient.zadd(AUTO_GOAL_SCHEDULE_KEY, nextAutoGoalTimestamp, playerId);
       await updateLeaderboardsForMatchGoal({ playerId, matchId: result.matchId });
+      try {
+        await redisClient.publish(AUTO_GOAL_SCORED_CHANNEL, JSON.stringify(result.goalResult));
+      } catch (error) {
+        console.warn("Failed to publish auto-goal result", error);
+      }
     }
 
     if (result.status === "clear_presence") {

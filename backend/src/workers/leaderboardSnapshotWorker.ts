@@ -3,24 +3,14 @@ import { db } from "@/lib/drizzle";
 import {
   getInProgressCupRoundId,
   getInProgressLeagueRound,
-  getInProgressMatchIds,
   getInProgressSeasonId,
 } from "@/repositories/matchRepository";
 import {
   buildLeagueRoundId,
   refreshCurrentHourLeaderboardSnapshot,
-  refreshMatchLeaderboardSnapshot,
   refreshRoundLeaderboardSnapshot,
   refreshSeasonLeaderboardSnapshot,
 } from "@/services/leaderboardService";
-
-async function refreshActiveMatchSnapshots(): Promise<void> {
-  const matchIds = await getInProgressMatchIds({ db });
-
-  for (const matchId of matchIds) {
-    await refreshMatchLeaderboardSnapshot({ matchId });
-  }
-}
 
 async function refreshActiveRoundSnapshots(): Promise<void> {
   const leagueRound = await getInProgressLeagueRound({ db });
@@ -56,8 +46,6 @@ export async function runLeaderboardSnapshotWorkerOnce() {
   if (seasonId) {
     await refreshSeasonLeaderboardSnapshot({ seasonId });
   }
-
-  await refreshActiveMatchSnapshots();
 }
 
 interface StartLeaderboardSnapshotWorkerProps {

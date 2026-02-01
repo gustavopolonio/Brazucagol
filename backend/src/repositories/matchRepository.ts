@@ -11,7 +11,7 @@ export type MatchRow = Pick<
 
 export type LockedRoundMatch = MatchRow;
 
-export type MatchLeaderboardContext = {
+export type MatchCompetitionContext = {
   matchId: string;
   matchType: Match["type"];
   competitionId: string | null;
@@ -206,15 +206,15 @@ export async function incrementMatchGoals({
   return rows[0];
 }
 
-interface GetMatchLeaderboardContextByIdProps {
+interface GetMatchCompetitionContextByIdProps {
   db: Transaction | DbClient;
   matchId: string;
 }
 
-export async function getMatchLeaderboardContextById({
+export async function getMatchCompetitionContextById({
   db,
   matchId,
-}: GetMatchLeaderboardContextByIdProps): Promise<MatchLeaderboardContext | null> {
+}: GetMatchCompetitionContextByIdProps): Promise<MatchCompetitionContext | null> {
   const matchRows = await db
     .select({
       matchId: matches.id,
@@ -230,19 +230,6 @@ export async function getMatchLeaderboardContextById({
     .limit(1);
 
   return matchRows[0] ?? null;
-}
-
-interface GetInProgressMatchIdsProps {
-  db: Transaction | DbClient;
-}
-
-export async function getInProgressMatchIds({ db }: GetInProgressMatchIdsProps): Promise<string[]> {
-  const matchRows = await db
-    .select({ matchId: matches.id })
-    .from(matches)
-    .where(eq(matches.status, "in_progress"));
-
-  return matchRows.map((row) => row.matchId);
 }
 
 interface GetInProgressLeagueRoundProps {
@@ -267,7 +254,6 @@ export async function getInProgressLeagueRound({
       )
     )
     .groupBy(matches.competitionId, matches.leagueRound)
-    .orderBy(desc(matches.date))
     .limit(1);
 
   return leagueRoundRows[0] ?? null;
