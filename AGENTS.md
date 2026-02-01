@@ -102,19 +102,22 @@
   - `cooldown:v1:{actionType}:{playerId}` → string with TTL
   - `gameplay:v1:online_players` → ZSET (score = lastSeenTimestamp, member = playerId)
   - `auto_goal:v1:schedule` → ZSET (score = nextAutoGoalTimestamp, member = playerId)
+  - `auto_goal:v1:scored_channel` → Pub/Sub channel
 
 ### Manual Actions (penalty, free_kick, trail)
 - Cooldown key exists → player cannot perform action
 - Cooldown key missing → player can perform action
 - Cooldown is created when:
   - Player logs in (initialize if missing)
-  - Player performs the action (NX + TTL)
+  - Player performs the action (`SET NX EX`)
 
 ### Auto Goals
 - Auto-goals are processed by a worker
 - Worker reads `auto_goal:v1:schedule`
 - When auto-goal happens:
-  - Next auto-goal timestamp is pushed forward
+  - Update match & player stats
+  - Push next auto-goal timestamp to ZSET
+  - Publish result to auto_goal:v1:scored_channel
 - Auto-goals only occur if player is considered online
 
 ### Online Presence
@@ -130,3 +133,13 @@
   - Deletes manual cooldown keys
 - When player logs in again:
   - All cooldowns start from the beginning
+
+### Workers & Processes
+- API server and workers run in separate Node processes
+- Redis acts as the shared state and message bus
+- Workers:
+  - Update Redis
+  - Publish events.
+- API:
+- Subscribes to Redis
+- Emits WebSocket events
