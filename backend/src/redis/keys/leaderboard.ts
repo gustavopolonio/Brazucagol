@@ -16,3 +16,7 @@ export const LEADERBOARD_CACHE_SEASON_KEY = "cache:v1:leaderboard:season";
 export function buildLeaderboardCacheRoundKey(roundId: string) {
   return `cache:v1:leaderboard:round:${roundId}`;
 }
+
+export function buildSeasonRecordHourProcessedKey(hourKey: string) {
+  return `season_record:v1:hour_processed:${hourKey}`;
+}

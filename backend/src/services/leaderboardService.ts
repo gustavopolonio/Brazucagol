@@ -15,6 +15,10 @@ import {
   getCachedSeasonLeaderboard,
 } from "@/repositories/leaderboardRepository";
 import { getMatchCompetitionContextById } from "@/repositories/matchRepository";
+import {
+  checkAndUpdateHourSeasonRecord,
+  checkAndUpdateRoundSeasonRecord,
+} from "@/services/seasonRecordsService";
 import { LeaderboardEntry, LeaderboardSnapshot } from "@/types/leaderboard.types";
 import { toZonedHourKey } from "@/utils";
 
@@ -83,17 +87,64 @@ function buildLeaderboardEntriesFromZset(rawEntries: string[]): LeaderboardEntry
   return leaderboardEntries;
 }
 
+async function buildRecordLeadersSnapshot(
+  leaderboardKey: string,
+  leaderboardSnapshot: LeaderboardSnapshot | null
+): Promise<LeaderboardSnapshot | null> {
+  if (!leaderboardSnapshot || leaderboardSnapshot.length === 0) {
+    return null;
+  }
+
+  let topScore = Number.NEGATIVE_INFINITY;
+
+  for (const entry of leaderboardSnapshot) {
+    if (!Number.isFinite(entry.goals)) continue;
+    if (entry.goals > topScore) {
+      topScore = entry.goals;
+    }
+  }
+
+  if (!Number.isFinite(topScore)) {
+    return null;
+  }
+
+  const playerIds = await redisClient.zrangebyscore(leaderboardKey, topScore, topScore);
+
+  if (playerIds.length === 0) {
+    return null;
+  }
+
+  return playerIds.map((playerId) => ({
+    playerId,
+    goals: topScore,
+  }));
+}
+
+async function getLeaderboardSnapshotForKey(
+  leaderboardKey: string
+): Promise<LeaderboardSnapshot | null> {
+  try {
+    const rawEntries = await redisClient.zrevrange(leaderboardKey, 0, 9, "WITHSCORES");
+    return buildLeaderboardEntriesFromZset(rawEntries);
+  } catch (error) {
+    console.error(`Failed to read leaderboard snapshot for ${leaderboardKey}`, error);
+    return null;
+  }
+}
+
 export async function refreshLeaderboardSnapshot({
   leaderboardKey,
   cacheKey,
-}: RefreshLeaderboardSnapshotProps): Promise<void> {
+}: RefreshLeaderboardSnapshotProps): Promise<LeaderboardSnapshot | null> {
   try {
     const rawEntries = await redisClient.zrevrange(leaderboardKey, 0, 9, "WITHSCORES");
     const snapshot: LeaderboardSnapshot = buildLeaderboardEntriesFromZset(rawEntries);
 
     await redisClient.set(cacheKey, JSON.stringify(snapshot));
+    return snapshot;
   } catch (error) {
     console.error(`Failed to refresh leaderboard snapshot for ${cacheKey}`, error);
+    return null;
   }
 }
 
@@ -171,6 +222,28 @@ export async function refreshRoundLeaderboardSnapshot({
     leaderboardKey: roundLeaderboardKey,
     cacheKey: roundCacheKey,
   });
+}
+
+export async function checkHourSeasonRecordForHourKey(
+  seasonId: string,
+  hourKey: string
+): Promise<void> {
+  const hourLeaderboardKey = buildHourlyLeaderboardKey(hourKey);
+  const snapshot = await getLeaderboardSnapshotForKey(hourLeaderboardKey);
+  const leadersSnapshot = await buildRecordLeadersSnapshot(hourLeaderboardKey, snapshot);
+
+  await checkAndUpdateHourSeasonRecord(seasonId, leadersSnapshot);
+}
+
+export async function checkRoundSeasonRecordForRoundId(
+  seasonId: string,
+  roundId: string
+): Promise<void> {
+  const roundLeaderboardKey = buildRoundLeaderboardKey(roundId);
+  const snapshot = await getLeaderboardSnapshotForKey(roundLeaderboardKey);
+  const leadersSnapshot = await buildRecordLeadersSnapshot(roundLeaderboardKey, snapshot);
+
+  await checkAndUpdateRoundSeasonRecord(seasonId, leadersSnapshot);
 }
 
 export async function getCurrentHourLeaderboardSnapshot(): Promise<LeaderboardSnapshot | null> {

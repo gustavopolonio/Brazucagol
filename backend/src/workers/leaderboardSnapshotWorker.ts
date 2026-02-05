@@ -1,5 +1,7 @@
 import { env } from "@/env";
 import { db } from "@/lib/drizzle";
+import { redisClient } from "@/lib/redis";
+import { buildSeasonRecordHourProcessedKey } from "@/redis/keys/leaderboard";
 import {
   getInProgressCupRoundId,
   getInProgressLeagueRound,
@@ -7,10 +9,12 @@ import {
 } from "@/repositories/matchRepository";
 import {
   buildLeagueRoundId,
+  checkHourSeasonRecordForHourKey,
   refreshCurrentHourLeaderboardSnapshot,
   refreshRoundLeaderboardSnapshot,
   refreshSeasonLeaderboardSnapshot,
 } from "@/services/leaderboardService";
+import { toZonedHourKey } from "@/utils";
 
 async function refreshActiveRoundSnapshots(): Promise<void> {
   const leagueRound = await getInProgressLeagueRound({ db });
@@ -38,6 +42,10 @@ async function refreshActiveRoundSnapshots(): Promise<void> {
 }
 
 export async function runLeaderboardSnapshotWorkerOnce() {
+  const currentDate = new Date();
+  const currentHourKey = toZonedHourKey(currentDate);
+  const previousHourKey = toZonedHourKey(new Date(currentDate.getTime() - 60 * 60 * 1000));
+
   await refreshCurrentHourLeaderboardSnapshot();
   await refreshActiveRoundSnapshots();
 
@@ -45,6 +53,13 @@ export async function runLeaderboardSnapshotWorkerOnce() {
 
   if (seasonId) {
     await refreshSeasonLeaderboardSnapshot({ seasonId });
+
+    const processedKey = buildSeasonRecordHourProcessedKey(previousHourKey);
+    const processed = await redisClient.set(processedKey, "1", "EX", 60 * 60 * 2, "NX");
+
+    if (processed === "OK" && previousHourKey !== currentHourKey) {
+      await checkHourSeasonRecordForHourKey(seasonId, previousHourKey);
+    }
   }
 }
 

@@ -25,6 +25,14 @@ export type InProgressLeagueRound = {
   leagueRound: number;
 };
 
+export type RoundSeasonContext = {
+  seasonId: string;
+  matchType: Match["type"];
+  competitionId: string;
+  leagueRound: number | null;
+  cupRoundId: string | null;
+};
+
 interface GetEarliestPendingRoundDateProps {
   db: Transaction | DbClient;
   now: Date;
@@ -295,4 +303,67 @@ export async function getInProgressSeasonId({
     .limit(1);
 
   return seasonRows[0]?.seasonId ?? null;
+}
+
+interface GetRoundSeasonContextsByDateProps {
+  db: Transaction | DbClient;
+  roundDate: Date;
+}
+
+export async function getRoundSeasonContextsByDate({
+  db,
+  roundDate,
+}: GetRoundSeasonContextsByDateProps): Promise<RoundSeasonContext[]> {
+  const leagueRounds = await db
+    .select({
+      seasonId: competitions.seasonId,
+      competitionId: matches.competitionId,
+      leagueRound: matches.leagueRound,
+    })
+    .from(matches)
+    .innerJoin(competitions, eq(matches.competitionId, competitions.id))
+    .where(
+      and(
+        eq(matches.date, roundDate),
+        eq(matches.type, "league"),
+        isNotNull(matches.competitionId),
+        isNotNull(matches.leagueRound)
+      )
+    )
+    .groupBy(competitions.seasonId, matches.competitionId, matches.leagueRound);
+
+  const cupRounds = await db
+    .select({
+      seasonId: competitions.seasonId,
+      competitionId: matches.competitionId,
+      cupRoundId: matches.cupRoundId,
+    })
+    .from(matches)
+    .innerJoin(competitions, eq(matches.competitionId, competitions.id))
+    .where(
+      and(
+        eq(matches.date, roundDate),
+        eq(matches.type, "cup"),
+        isNotNull(matches.competitionId),
+        isNotNull(matches.cupRoundId)
+      )
+    )
+    .groupBy(competitions.seasonId, matches.competitionId, matches.cupRoundId);
+
+  return [
+    ...leagueRounds.map((row) => ({
+      seasonId: row.seasonId,
+      matchType: "league" as const,
+      competitionId: row.competitionId,
+      leagueRound: row.leagueRound,
+      cupRoundId: null,
+    })),
+    ...cupRounds.map((row) => ({
+      seasonId: row.seasonId,
+      matchType: "cup" as const,
+      competitionId: row.competitionId,
+      leagueRound: null,
+      cupRoundId: row.cupRoundId,
+    })),
+  ];
 }

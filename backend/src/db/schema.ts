@@ -25,6 +25,7 @@ export const clubRoleEnum = pgEnum("club_role", [
 ]);
 export const competitionTypeEnum = pgEnum("competition_type", ["league", "cup"]);
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
+export const seasonRecordTypeEnum = pgEnum("season_record_type", ["hour_goals", "round_goals"]);
 
 export const users = pgTable(
   "users",
@@ -167,6 +168,43 @@ export const seasonPauses = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [uniqueIndex("season_pauses_season_starts_at_unique").on(table.seasonId, table.date)]
+);
+
+export const seasonRecords = pgTable(
+  "season_records",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    seasonId: uuid("season_id")
+      .references(() => seasons.id, { onDelete: "cascade" })
+      .notNull(),
+    type: seasonRecordTypeEnum("type").notNull(),
+    recordValue: integer("record_value").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [uniqueIndex("season_records_season_type_unique").on(table.seasonId, table.type)]
+);
+
+export const seasonRecordHolders = pgTable(
+  "season_record_holders",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    seasonRecordId: uuid("season_record_id")
+      .references(() => seasonRecords.id, { onDelete: "cascade" })
+      .notNull(),
+    playerId: uuid("player_id")
+      .references(() => players.id, { onDelete: "cascade" })
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("season_record_holders_record_player_unique").on(
+      table.seasonRecordId,
+      table.playerId
+    ),
+  ]
 );
 
 export const competitions = pgTable("competitions", {
@@ -421,6 +459,11 @@ export type Season = typeof seasons.$inferSelect;
 export type NewSeason = typeof seasons.$inferInsert;
 export type SeasonPause = typeof seasonPauses.$inferSelect;
 export type NewSeasonPause = typeof seasonPauses.$inferInsert;
+export type SeasonRecord = typeof seasonRecords.$inferSelect;
+export type NewSeasonRecord = typeof seasonRecords.$inferInsert;
+export type SeasonRecordType = (typeof seasonRecordTypeEnum.enumValues)[number];
+export type SeasonRecordHolder = typeof seasonRecordHolders.$inferSelect;
+export type NewSeasonRecordHolder = typeof seasonRecordHolders.$inferInsert;
 export type Competition = typeof competitions.$inferSelect;
 export type NewCompetition = typeof competitions.$inferInsert;
 export type LeagueDivision = typeof leagueDivisions.$inferSelect;
@@ -454,6 +497,8 @@ export const schema = {
   clubMembers,
   levels,
   seasons,
+  seasonRecords,
+  seasonRecordHolders,
   competitions,
   leagueDivisions,
   cupRounds,

@@ -4,11 +4,16 @@ import { finalizeRoundMatches } from "@/services/match/finalize";
 import {
   getEarliestInProgressRoundDate,
   getEarliestPendingRoundDate,
+  getRoundSeasonContextsByDate,
   lockMatchesByDate,
   markRoundFinished,
   markRoundInProgress,
 } from "@/repositories/matchRepository";
 import { lockRoundMatchesForFinalize } from "@/repositories/matchFinalizationRepository";
+import {
+  buildLeagueRoundId,
+  checkRoundSeasonRecordForRoundId,
+} from "@/services/leaderboardService";
 
 type RoundActionResult = {
   roundDate: Date | null;
@@ -100,9 +105,40 @@ export async function finishDueRound({
   });
 }
 
+async function checkRoundSeasonRecords(roundDate: Date): Promise<void> {
+  const roundContexts = await getRoundSeasonContextsByDate({ db, roundDate });
+
+  for (const roundContext of roundContexts) {
+    if (roundContext.matchType === "league") {
+      if (roundContext.leagueRound === null) {
+        continue;
+      }
+
+      await checkRoundSeasonRecordForRoundId(
+        roundContext.seasonId,
+        buildLeagueRoundId({
+          competitionId: roundContext.competitionId,
+          leagueRound: roundContext.leagueRound,
+        })
+      );
+
+      continue;
+    }
+
+    if (roundContext.cupRoundId) {
+      await checkRoundSeasonRecordForRoundId(roundContext.seasonId, roundContext.cupRoundId);
+    }
+  }
+}
+
 export async function runMatchLifecycleWorkerOnce() {
-  await finishDueRound({ currentTime: new Date("2026-02-13T21:00:00Z") });
-  await startDueRound({ currentTime: new Date("2026-02-13T21:00:00Z") });
+  const finishedRound = await finishDueRound({ currentTime: new Date("2026-02-14T21:00:00Z") });
+
+  if (finishedRound.roundDate && finishedRound.matchesCount > 0) {
+    await checkRoundSeasonRecords(finishedRound.roundDate);
+  }
+
+  await startDueRound({ currentTime: new Date("2026-02-14T21:00:00Z") });
 }
 
 interface StartMatchLifecycleWorkerProps {
