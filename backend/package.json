@@ -13,6 +13,7 @@
     "prettier:format": "prettier --write .",
     "seed:clubs": "tsx --env-file .env src/scripts/seed-clubs.ts",
     "seed:cup-rounds": "tsx --env-file .env src/scripts/seed-cup-rounds.ts",
+    "seed:store-items": "tsx --env-file .env src/scripts/seed-store-items.ts",
     "bootstrap-league": "tsx --env-file .env src/scripts/bootstrap-league.ts",
     "bootstrap-cup": "tsx --env-file .env src/scripts/bootstrap-cup.ts",
     "start-match-lifecycle-worker": "tsx --env-file .env src/workers/matchLifecycleWorker.ts",
