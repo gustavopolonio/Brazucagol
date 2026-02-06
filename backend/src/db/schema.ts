@@ -26,6 +26,13 @@ export const clubRoleEnum = pgEnum("club_role", [
 export const competitionTypeEnum = pgEnum("competition_type", ["league", "cup"]);
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
 export const seasonRecordTypeEnum = pgEnum("season_record_type", ["hour_goals", "round_goals"]);
+export const itemTypeEnum = pgEnum("item_type", ["vip", "transfer_pass", "avatar_item"]);
+export const itemPricingTypeEnum = pgEnum("item_pricing_type", [
+  "coins_only",
+  "real_money_only",
+  "coins_and_real_money",
+]);
+export const paymentMethodEnum = pgEnum("payment_method", ["coins", "real_money"]);
 
 export const users = pgTable(
   "users",
@@ -302,6 +309,120 @@ export const clubs = pgTable(
   (table) => [uniqueIndex("clubs_name_unique").on(table.name)]
 );
 
+export const storeItems = pgTable(
+  "store_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: varchar("name", { length: 120 }).notNull(),
+    isAvailableInStore: boolean("is_available_in_store").default(false).notNull(),
+    type: itemTypeEnum("type").notNull(),
+    durationSeconds: integer("duration_seconds"), // only for Vip
+    pricingType: itemPricingTypeEnum("pricing_type").notNull(),
+    coinPriceCents: integer("coin_price_cents"),
+    realMoneyPriceCents: integer("real_money_price_cents"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    check(
+      "store_items_pricing_type_check",
+      sql`(
+        (${table.pricingType} = 'coins_only' AND ${table.coinPriceCents} IS NOT NULL AND ${table.realMoneyPriceCents} IS NULL)
+        OR (${table.pricingType} = 'real_money_only' AND ${table.coinPriceCents} IS NULL AND ${table.realMoneyPriceCents} IS NOT NULL)
+        OR (${table.pricingType} = 'coins_and_real_money' AND ${table.coinPriceCents} IS NOT NULL AND ${table.realMoneyPriceCents} IS NOT NULL)
+      )`
+    ),
+  ]
+);
+
+export const playerItems = pgTable(
+  "player_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    playerId: uuid("player_id")
+      .notNull()
+      .references(() => players.id, { onDelete: "cascade" }),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => storeItems.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").default(1).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [uniqueIndex("player_items_player_item_unique").on(table.playerId, table.itemId)]
+);
+
+export const clubItems = pgTable(
+  "club_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clubId: uuid("club_id")
+      .notNull()
+      .references(() => clubs.id, { onDelete: "cascade" }),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => storeItems.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").default(1).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [uniqueIndex("club_items_club_item_unique").on(table.clubId, table.itemId)]
+);
+
+export const itemPurchaseLogs = pgTable(
+  "item_purchase_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => storeItems.id, { onDelete: "cascade" }),
+    playerId: uuid("player_id").references(() => players.id, { onDelete: "cascade" }),
+    clubId: uuid("club_id").references(() => clubs.id, { onDelete: "cascade" }),
+    paymentMethod: paymentMethodEnum("payment_method").notNull(),
+    unitPrice: integer("unit_price").notNull(),
+    quantity: integer("quantity").default(1).notNull(),
+    purchasedAt: timestamp("purchased_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    check(
+      "item_purchase_logs_owner_check",
+      sql`(
+        (${table.playerId} IS NULL AND ${table.clubId} IS NOT NULL)
+        OR (${table.playerId} IS NOT NULL AND ${table.clubId} IS NULL)
+      )`
+    ),
+  ]
+);
+
+export const itemUsageLogs = pgTable(
+  "item_usage_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => storeItems.id, { onDelete: "cascade" }),
+    playerId: uuid("player_id").references(() => players.id, { onDelete: "cascade" }),
+    clubId: uuid("club_id").references(() => clubs.id, { onDelete: "cascade" }),
+    quantityUsed: integer("quantity_used").default(1).notNull(),
+    reason: text("reason").notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    check(
+      "item_usage_logs_owner_check",
+      sql`(
+        (${table.playerId} IS NULL AND ${table.clubId} IS NOT NULL)
+        OR (${table.playerId} IS NOT NULL AND ${table.clubId} IS NULL)
+      )`
+    ),
+  ]
+);
+
 export const matches = pgTable(
   "matches",
   {
@@ -462,6 +583,9 @@ export type NewSeasonPause = typeof seasonPauses.$inferInsert;
 export type SeasonRecord = typeof seasonRecords.$inferSelect;
 export type NewSeasonRecord = typeof seasonRecords.$inferInsert;
 export type SeasonRecordType = (typeof seasonRecordTypeEnum.enumValues)[number];
+export type ItemType = (typeof itemTypeEnum.enumValues)[number];
+export type ItemPricingType = (typeof itemPricingTypeEnum.enumValues)[number];
+export type PaymentMethod = (typeof paymentMethodEnum.enumValues)[number];
 export type SeasonRecordHolder = typeof seasonRecordHolders.$inferSelect;
 export type NewSeasonRecordHolder = typeof seasonRecordHolders.$inferInsert;
 export type Competition = typeof competitions.$inferSelect;
@@ -476,6 +600,16 @@ export type Club = typeof clubs.$inferSelect;
 export type NewClub = typeof clubs.$inferInsert;
 export type Match = typeof matches.$inferSelect;
 export type NewMatch = typeof matches.$inferInsert;
+export type StoreItem = typeof storeItems.$inferSelect;
+export type NewStoreItem = typeof storeItems.$inferInsert;
+export type PlayerItem = typeof playerItems.$inferSelect;
+export type NewPlayerItem = typeof playerItems.$inferInsert;
+export type ClubItem = typeof clubItems.$inferSelect;
+export type NewClubItem = typeof clubItems.$inferInsert;
+export type ItemPurchaseLog = typeof itemPurchaseLogs.$inferSelect;
+export type NewItemPurchaseLog = typeof itemPurchaseLogs.$inferInsert;
+export type ItemUsageLog = typeof itemUsageLogs.$inferSelect;
+export type NewItemUsageLog = typeof itemUsageLogs.$inferInsert;
 export type CompetitionClub = typeof competitionClubs.$inferSelect;
 export type NewCompetitionClub = typeof competitionClubs.$inferInsert;
 export type ClubMember = typeof clubMembers.$inferSelect;
@@ -502,6 +636,11 @@ export const schema = {
   competitions,
   leagueDivisions,
   cupRounds,
+  storeItems,
+  playerItems,
+  clubItems,
+  itemPurchaseLogs,
+  itemUsageLogs,
   matches,
   competitionClubs,
   clubChatMessages,
