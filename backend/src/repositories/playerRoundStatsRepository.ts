@@ -1,4 +1,4 @@
-import { SQL, and, eq, sql } from "drizzle-orm";
+import { SQL, and, eq, gt, gte, sql } from "drizzle-orm";
 import { playerRoundStats, type PlayerRoundStat } from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
@@ -23,6 +23,8 @@ export type AttemptColumnName =
   | "penaltyAttempts"
   | "freeKickAttempts"
   | "trailAttempts";
+
+type DbClient = (typeof import("@/lib/drizzle"))["db"];
 
 interface GetPlayerRoundStatsForUpdateProps {
   db: Transaction;
@@ -129,4 +131,32 @@ export async function incrementPlayerRoundStatsColumns({
     });
 
   return rows[0];
+}
+
+interface HasPenaltyAttemptSinceProps {
+  db: Transaction | DbClient;
+  playerId: string;
+  sinceDate: Date;
+}
+
+export async function hasPenaltyAttemptSince({
+  db,
+  playerId,
+  sinceDate,
+}: HasPenaltyAttemptSinceProps): Promise<boolean> {
+  const rows = await db
+    .select({
+      id: playerRoundStats.id,
+    })
+    .from(playerRoundStats)
+    .where(
+      and(
+        eq(playerRoundStats.playerId, playerId),
+        gt(playerRoundStats.penaltyAttempts, 0),
+        gte(playerRoundStats.createdAt, sinceDate)
+      )
+    )
+    .limit(1);
+
+  return rows.length > 0;
 }

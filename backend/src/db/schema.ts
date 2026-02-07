@@ -502,7 +502,6 @@ export const clubMembers = pgTable(
     leftAt: timestamp("left_at", { withTimezone: true }),
   },
   (table) => [
-    uniqueIndex("club_members_club_player_unique").on(table.clubId, table.playerId),
     uniqueIndex("club_members_player_active_unique").on(table.playerId).where(isNull(table.leftAt)),
   ]
 );

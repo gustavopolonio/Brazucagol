@@ -1,8 +1,13 @@
 import { env } from "@/env";
 
+export function isVipActive(vipExpiresAt: Date | null, currentTime: Date): boolean {
+  return vipExpiresAt !== null && vipExpiresAt.getTime() > currentTime.getTime();
+}
+
 export function resolveCooldownTtlInSeconds(vipExpiresAt: Date | null, currentTime: Date) {
-  const isVipActive = vipExpiresAt !== null && vipExpiresAt.getTime() > currentTime.getTime();
-  return isVipActive ? env.COOLDOWN_VIP_SECONDS : env.COOLDOWN_STANDARD_SECONDS;
+  return isVipActive(vipExpiresAt, currentTime)
+    ? env.COOLDOWN_VIP_SECONDS
+    : env.COOLDOWN_STANDARD_SECONDS;
 }
 
 export function getNextAutoGoalTimestamp(

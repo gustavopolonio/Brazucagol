@@ -21,6 +21,7 @@
     "start-presence-cleanup": "tsx --env-file .env src/workers/presenceCleanupWorker.ts",
     "start-leaderboard-snapshot-worker": "tsx --env-file .env src/workers/leaderboardSnapshotWorker.ts",
     "start-online-players-count": "tsx --env-file .env src/workers/onlinePlayersCountWorker.ts",
+    "start-president-activity-worker": "tsx --env-file .env src/workers/presidentActivity.ts",
     "start-workers": "tsx --env-file .env src/workers/index.ts"
   },
   "keywords": [],
