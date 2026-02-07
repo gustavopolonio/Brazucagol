@@ -2,7 +2,7 @@ import { env } from "@/env";
 import { db } from "@/lib/drizzle";
 import { listActivePresidents } from "@/repositories/clubMembersRepository";
 import { hasPenaltyAttemptSince } from "@/repositories/playerRoundStatsRepository";
-import { removePlayerRole } from "@/services/clubPresidency";
+import { removeInactivePresident } from "@/services/clubPresidency";
 
 const PRESIDENT_ACTIVITY_WINDOW_DAYS = 5 * 24 * 60 * 60 * 1000; // 5 days
 const INACTIVE_PRESIDENT_REASON = "inactive_president_no_penalty_attempt";
@@ -31,7 +31,7 @@ async function processPresidentActivity({
     return;
   }
 
-  await removePlayerRole(playerId, clubId, INACTIVE_PRESIDENT_REASON);
+  await removeInactivePresident(playerId, clubId, INACTIVE_PRESIDENT_REASON);
 }
 
 export async function runPresidentActivityWorkerOnce(): Promise<void> {

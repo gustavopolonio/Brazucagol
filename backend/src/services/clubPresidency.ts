@@ -1,11 +1,9 @@
 import { db } from "@/lib/drizzle";
 import {
   assignClubMemberRole,
-  demoteActivePresidentToPlayer,
   getActivePresidentByClubIdForUpdate,
   getClubMembershipByPlayerAndClubForUpdate,
   lockActiveClubMembersByClubId,
-  removeClubMemberRole,
   type ClubRoleValue,
 } from "@/repositories/clubMembersRepository";
 import { getPlayerById } from "@/repositories/playerRepository";
@@ -98,40 +96,42 @@ export async function claimPresidency(
   });
 }
 
-export async function removePresident(
+export async function makePresidencyAvailable(
+  actorPlayerId: string,
   clubId: string,
   reason: string
 ): Promise<ClubPresidencyChangeResult> {
   return db.transaction(async (transaction) => {
     await lockActiveClubMembersByClubId({ db: transaction, clubId });
 
-    const activePresident = await getActivePresidentByClubIdForUpdate({
+    const actorMembership = await getClubMembershipByPlayerAndClubForUpdate({
       db: transaction,
+      playerId: actorPlayerId,
       clubId,
     });
 
-    if (!activePresident) {
-      return {
-        changed: false,
-        clubId,
-      };
+    if (!actorMembership) {
+      throw new Error("Actor player does not belong to this club.");
     }
 
-    const demotedPresident = await demoteActivePresidentToPlayer({
+    if (actorMembership.role !== "president") {
+      throw new Error("Only the current president can make presidency available.");
+    }
+
+    const updatedClubMember = await assignClubMemberRole({
       db: transaction,
+      playerId: actorPlayerId,
       clubId,
+      role: "player",
     });
 
-    if (!demotedPresident) {
-      return {
-        changed: false,
-        clubId,
-      };
+    if (!updatedClubMember) {
+      throw new Error("Unable to remove president role.");
     }
 
     logRoleChange({
       clubId,
-      playerId: demotedPresident.playerId,
+      playerId: actorPlayerId,
       previousRole: "president",
       nextRole: "player",
       reason,
@@ -140,19 +140,12 @@ export async function removePresident(
     return {
       changed: true,
       clubId,
-      playerId: demotedPresident.playerId,
+      playerId: actorPlayerId,
     };
   });
 }
 
-export async function makePresidencyAvailable(
-  clubId: string,
-  reason: string
-): Promise<ClubPresidencyChangeResult> {
-  return removePresident(clubId, reason);
-}
-
-export async function removePlayerRole(
+export async function removeInactivePresident(
   playerId: string,
   clubId: string,
   reason: string
@@ -174,7 +167,7 @@ export async function removePlayerRole(
       };
     }
 
-    if (clubMembership.role === "player") {
+    if (clubMembership.role !== "president") {
       return {
         changed: false,
         clubId,
@@ -182,10 +175,11 @@ export async function removePlayerRole(
       };
     }
 
-    const updatedClubMember = await removeClubMemberRole({
+    const updatedClubMember = await assignClubMemberRole({
       db: transaction,
       playerId,
       clubId,
+      role: "player",
     });
 
     if (!updatedClubMember) {
@@ -199,7 +193,7 @@ export async function removePlayerRole(
     logRoleChange({
       clubId,
       playerId,
-      previousRole: clubMembership.role,
+      previousRole: "president",
       nextRole: "player",
       reason,
     });
