@@ -148,33 +148,6 @@ export async function assignClubMemberRole({
   return rows[0] ?? null;
 }
 
-interface DemoteActivePresidentToPlayerProps {
-  db: Transaction;
-  clubId: string;
-}
-
-export async function demoteActivePresidentToPlayer({
-  db,
-  clubId,
-}: DemoteActivePresidentToPlayerProps): Promise<ActivePresidentRow | null> {
-  const rows = await db
-    .update(clubMembers)
-    .set({ role: "player" })
-    .where(
-      and(
-        eq(clubMembers.clubId, clubId),
-        eq(clubMembers.role, "president"),
-        isNull(clubMembers.leftAt)
-      )
-    )
-    .returning({
-      clubId: clubMembers.clubId,
-      playerId: clubMembers.playerId,
-    });
-
-  return rows[0] ?? null;
-}
-
 interface RemoveClubMemberRoleProps {
   db: Transaction;
   playerId: string;
@@ -193,7 +166,8 @@ export async function removeClubMemberRole({
       and(
         eq(clubMembers.playerId, playerId),
         eq(clubMembers.clubId, clubId),
-        ne(clubMembers.role, "player")
+        ne(clubMembers.role, "player"),
+        isNull(clubMembers.leftAt)
       )
     )
     .returning({
@@ -204,6 +178,29 @@ export async function removeClubMemberRole({
     });
 
   return rows[0] ?? null;
+}
+
+interface CountActiveClubMembersByRoleProps {
+  db: Transaction;
+  clubId: string;
+  role: ClubRoleValue;
+}
+
+export async function countActiveClubMembersByRole({
+  db,
+  clubId,
+  role,
+}: CountActiveClubMembersByRoleProps): Promise<number> {
+  const rows = await db
+    .select({
+      count: sql<number>`count(*)::int`,
+    })
+    .from(clubMembers)
+    .where(
+      and(eq(clubMembers.clubId, clubId), eq(clubMembers.role, role), isNull(clubMembers.leftAt))
+    );
+
+  return rows[0]?.count ?? 0;
 }
 
 interface MarkPlayerLeftClubProps {
