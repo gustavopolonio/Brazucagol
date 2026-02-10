@@ -29,6 +29,31 @@ export async function getPlayerClubMembership({
   return rows[0] ?? null;
 }
 
+interface GetPlayerActiveClubMembershipForUpdateProps {
+  db: Transaction;
+  playerId: string;
+}
+
+export async function getPlayerActiveClubMembershipForUpdate({
+  db,
+  playerId,
+}: GetPlayerActiveClubMembershipForUpdateProps): Promise<ClubMemberRoleRow | null> {
+  const result = await db.execute(sql`
+    select
+      ${clubMembers.clubId} as "clubId",
+      ${clubMembers.playerId} as "playerId",
+      ${clubMembers.role} as "role",
+      ${clubMembers.leftAt} as "leftAt"
+    from ${clubMembers}
+    where ${clubMembers.playerId} = ${playerId}
+      and ${clubMembers.leftAt} is null
+    limit 1
+    for update
+  `);
+
+  return (result.rows[0] as ClubMemberRoleRow | undefined) ?? null;
+}
+
 interface LockActiveClubMembersByClubIdProps {
   db: Transaction;
   clubId: string;
@@ -146,6 +171,36 @@ export async function assignClubMemberRole({
     });
 
   return rows[0] ?? null;
+}
+
+interface CreateClubMembershipProps {
+  db: Transaction;
+  playerId: string;
+  clubId: string;
+  role?: ClubRoleValue;
+}
+
+export async function createClubMembership({
+  db,
+  playerId,
+  clubId,
+  role = "player",
+}: CreateClubMembershipProps): Promise<ClubMemberRoleRow> {
+  const rows = await db
+    .insert(clubMembers)
+    .values({
+      playerId,
+      clubId,
+      role,
+    })
+    .returning({
+      clubId: clubMembers.clubId,
+      playerId: clubMembers.playerId,
+      role: clubMembers.role,
+      leftAt: clubMembers.leftAt,
+    });
+
+  return rows[0];
 }
 
 interface RemoveClubMemberRoleProps {

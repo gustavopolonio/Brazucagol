@@ -33,6 +33,12 @@ export const itemPricingTypeEnum = pgEnum("item_pricing_type", [
   "coins_and_real_money",
 ]);
 export const paymentMethodEnum = pgEnum("payment_method", ["coins", "real_money"]);
+export const clubTransferProposalStatusEnum = pgEnum("club_transfer_proposal_status", [
+  "pending",
+  "accepted",
+  "denied",
+  "expired",
+]);
 
 export const users = pgTable(
   "users",
@@ -466,6 +472,42 @@ export const itemTransferLogs = pgTable(
   ]
 );
 
+export const clubTransferProposals = pgTable(
+  "club_transfer_proposals",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    proposerClubId: uuid("proposer_club_id")
+      .notNull()
+      .references(() => clubs.id, { onDelete: "cascade" }),
+    targetPlayerCurrentClubId: uuid("target_player_current_club_id")
+      .notNull()
+      .references(() => clubs.id, { onDelete: "cascade" }),
+    actorPlayerId: uuid("actor_player_id")
+      .notNull()
+      .references(() => players.id, { onDelete: "cascade" }),
+    targetPlayerId: uuid("target_player_id")
+      .notNull()
+      .references(() => players.id, { onDelete: "cascade" }),
+    transferPassItemId: uuid("transfer_pass_item_id")
+      .notNull()
+      .references(() => storeItems.id, { onDelete: "cascade" }),
+    status: clubTransferProposalStatusEnum("status").default("pending").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  },
+  (table) => [
+    check(
+      "club_transfer_proposals_club_distinct_check",
+      sql`${table.proposerClubId} <> ${table.targetPlayerCurrentClubId}`
+    ),
+    check(
+      "club_transfer_proposals_player_distinct_check",
+      sql`${table.actorPlayerId} <> ${table.targetPlayerId}`
+    ),
+  ]
+);
+
 export const matches = pgTable(
   "matches",
   {
@@ -628,6 +670,7 @@ export type SeasonRecordType = (typeof seasonRecordTypeEnum.enumValues)[number];
 export type ItemType = (typeof itemTypeEnum.enumValues)[number];
 export type ItemPricingType = (typeof itemPricingTypeEnum.enumValues)[number];
 export type PaymentMethod = (typeof paymentMethodEnum.enumValues)[number];
+export type ClubTransferProposalStatus = (typeof clubTransferProposalStatusEnum.enumValues)[number];
 export type SeasonRecordHolder = typeof seasonRecordHolders.$inferSelect;
 export type NewSeasonRecordHolder = typeof seasonRecordHolders.$inferInsert;
 export type Competition = typeof competitions.$inferSelect;
@@ -654,6 +697,8 @@ export type ItemUsageLog = typeof itemUsageLogs.$inferSelect;
 export type NewItemUsageLog = typeof itemUsageLogs.$inferInsert;
 export type ItemTransferLog = typeof itemTransferLogs.$inferSelect;
 export type NewItemTransferLog = typeof itemTransferLogs.$inferInsert;
+export type ClubTransferProposal = typeof clubTransferProposals.$inferSelect;
+export type NewClubTransferProposal = typeof clubTransferProposals.$inferInsert;
 export type CompetitionClub = typeof competitionClubs.$inferSelect;
 export type NewCompetitionClub = typeof competitionClubs.$inferInsert;
 export type ClubMember = typeof clubMembers.$inferSelect;
@@ -686,6 +731,7 @@ export const schema = {
   itemPurchaseLogs,
   itemUsageLogs,
   itemTransferLogs,
+  clubTransferProposals,
   matches,
   competitionClubs,
   clubChatMessages,
