@@ -25,3 +25,6 @@ coverage/
 .eslintcache
 .cache/
 .turbo/
+
+# Scoket test
+socket-test.ts
