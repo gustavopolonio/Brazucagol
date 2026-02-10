@@ -423,6 +423,48 @@ export const itemUsageLogs = pgTable(
   ]
 );
 
+export const itemTransferLogs = pgTable(
+  "item_transfer_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => storeItems.id, { onDelete: "cascade" }),
+    fromClubId: uuid("from_club_id").references(() => clubs.id, { onDelete: "cascade" }),
+    fromPlayerId: uuid("from_player_id").references(() => players.id, { onDelete: "cascade" }),
+    toClubId: uuid("to_club_id").references(() => clubs.id, { onDelete: "cascade" }),
+    toPlayerId: uuid("to_player_id").references(() => players.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").default(1).notNull(),
+    reason: text("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    check(
+      "item_transfer_logs_sender_check",
+      sql`(
+        (${table.fromClubId} IS NOT NULL AND ${table.fromPlayerId} IS NULL)
+        OR (${table.fromClubId} IS NULL AND ${table.fromPlayerId} IS NOT NULL)
+      )`
+    ),
+    check(
+      "item_transfer_logs_receiver_check",
+      sql`(
+        (${table.toClubId} IS NOT NULL AND ${table.toPlayerId} IS NULL)
+        OR (${table.toClubId} IS NULL AND ${table.toPlayerId} IS NOT NULL)
+      )`
+    ),
+    check("item_transfer_logs_quantity_positive_check", sql`${table.quantity} > 0`),
+    check(
+      "item_transfer_logs_no_self_transfer_check",
+      sql`(
+        (${table.fromPlayerId} IS NULL OR ${table.toPlayerId} IS NULL OR ${table.fromPlayerId} <> ${table.toPlayerId})
+        AND
+        (${table.fromClubId} IS NULL OR ${table.toClubId} IS NULL OR ${table.fromClubId} <> ${table.toClubId})
+      )`
+    ),
+  ]
+);
+
 export const matches = pgTable(
   "matches",
   {
@@ -609,6 +651,8 @@ export type ItemPurchaseLog = typeof itemPurchaseLogs.$inferSelect;
 export type NewItemPurchaseLog = typeof itemPurchaseLogs.$inferInsert;
 export type ItemUsageLog = typeof itemUsageLogs.$inferSelect;
 export type NewItemUsageLog = typeof itemUsageLogs.$inferInsert;
+export type ItemTransferLog = typeof itemTransferLogs.$inferSelect;
+export type NewItemTransferLog = typeof itemTransferLogs.$inferInsert;
 export type CompetitionClub = typeof competitionClubs.$inferSelect;
 export type NewCompetitionClub = typeof competitionClubs.$inferInsert;
 export type ClubMember = typeof clubMembers.$inferSelect;
@@ -640,6 +684,7 @@ export const schema = {
   clubItems,
   itemPurchaseLogs,
   itemUsageLogs,
+  itemTransferLogs,
   matches,
   competitionClubs,
   clubChatMessages,
