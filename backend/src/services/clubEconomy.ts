@@ -11,8 +11,7 @@ import { insertClubItemPurchaseLogWithCoins } from "@/repositories/itemPurchaseL
 import { insertItemTransferLog } from "@/repositories/itemTransferLogsRepository";
 import { upsertPlayerItemQuantityIncrease } from "@/repositories/playerItemsRepository";
 import { getStoreItemById } from "@/repositories/storeItemsRepository";
-import { type ItemPricingType } from "@/db/schema";
-import { assertPositiveInteger } from "@/utils/validation";
+import { assertPositiveInteger, assertStoreItemAllowsCoins } from "@/utils/validation";
 
 const CLUB_ECONOMY_MANAGER_ROLES: ClubRoleValue[] = ["president", "vice_president", "director"];
 const CLUB_VIP_MANAGER_ROLES: ClubRoleValue[] = ["president", "vice_president"];
@@ -57,14 +56,6 @@ function assertActorCanManageVipItems(actorRole: ClubRoleValue): void {
   }
 }
 
-function assertStoreItemAllowsCoins(pricingType: ItemPricingType): void {
-  if (pricingType === "coins_only" || pricingType === "coins_and_real_money") {
-    return;
-  }
-
-  throw new Error("Store item cannot be purchased with club coins.");
-}
-
 export async function buyStoreItemWithClubCoins({
   actorPlayerId,
   clubId,
@@ -95,7 +86,10 @@ export async function buyStoreItemWithClubCoins({
       throw new Error("Store item not found.");
     }
 
-    assertStoreItemAllowsCoins(storeItem.pricingType);
+    assertStoreItemAllowsCoins(
+      storeItem.pricingType,
+      "Store item cannot be purchased with club coins."
+    );
 
     if (storeItem.coinPriceCents === null) {
       throw new Error("Store item does not have a coin price.");

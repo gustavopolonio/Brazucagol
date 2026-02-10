@@ -25,3 +25,28 @@ export async function insertClubItemPurchaseLogWithCoins({
     quantity,
   });
 }
+
+interface InsertPlayerItemPurchaseLogWithCoinsProps {
+  db: Transaction;
+  playerId: string;
+  itemId: string;
+  unitPrice: number;
+  quantity: number;
+}
+
+export async function insertPlayerItemPurchaseLogWithCoins({
+  db,
+  playerId,
+  itemId,
+  unitPrice,
+  quantity,
+}: InsertPlayerItemPurchaseLogWithCoinsProps): Promise<void> {
+  await db.insert(itemPurchaseLogs).values({
+    itemId,
+    clubId: null,
+    playerId,
+    paymentMethod: "coins",
+    unitPrice,
+    quantity,
+  });
+}
