@@ -4,6 +4,7 @@ import { db } from "@/lib/drizzle";
 import { Transaction } from "@/lib/drizzle";
 
 export type ClubPreviewRow = Pick<Club, "id" | "name" | "logoUrl">;
+export type ClubIdRow = Pick<Club, "id">;
 export type ClubCoinsRow = Pick<Club, "id" | "coins">;
 
 export async function getClubsByIds(clubIds: string[]): Promise<ClubPreviewRow[]> {
@@ -22,6 +23,28 @@ export async function getClubsByIds(clubIds: string[]): Promise<ClubPreviewRow[]
 interface GetClubCoinsForUpdateProps {
   db: Transaction;
   clubId: string;
+}
+
+interface GetClubByIdForUpdateProps {
+  db: Transaction;
+  clubId: string;
+}
+
+export async function getClubByIdForUpdate({
+  db,
+  clubId,
+}: GetClubByIdForUpdateProps): Promise<ClubIdRow | null> {
+  const result = await db.execute(sql`
+    select
+      ${clubs.id} as "id"
+    from ${clubs}
+    where ${clubs.id} = ${clubId}
+      and ${clubs.deletedAt} is null
+    limit 1
+    for update
+  `);
+
+  return (result.rows[0] as ClubIdRow | undefined) ?? null;
 }
 
 export async function getClubCoinsForUpdate({
