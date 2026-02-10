@@ -22,6 +22,7 @@
     "start-leaderboard-snapshot-worker": "tsx --env-file .env src/workers/leaderboardSnapshotWorker.ts",
     "start-online-players-count": "tsx --env-file .env src/workers/onlinePlayersCountWorker.ts",
     "start-president-activity-worker": "tsx --env-file .env src/workers/presidentActivity.ts",
+    "start-transfer-proposal-expiration-worker": "tsx --env-file .env src/workers/transferProposalExpiration.ts",
     "start-workers": "tsx --env-file .env src/workers/index.ts"
   },
   "keywords": [],

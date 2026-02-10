@@ -34,6 +34,7 @@ const envSchema = z.object({
   ONLINE_PLAYERS_COUNT_INTERVAL_MS: z.coerce.number().default(60000), // 60 sec
   ONLINE_WINDOW_MS: z.coerce.number().int().positive().default(60000), // 60 sec
   PRESIDENT_ACTIVITY_WORKER_INTERVAL_MS: z.coerce.number().default(86400000), // 1 day
+  TRANSFER_PROPOSAL_EXPIRATION_WORKER_INTERVAL_MS: z.coerce.number().default(3600000), // 1 hour
 
   // Leaderboard TTLs (history window)
   HOUR_LEADERBOARD_TTL_SECONDS: z.coerce.number().int().positive().default(7200), // 2 hours
