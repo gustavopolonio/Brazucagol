@@ -2,7 +2,10 @@ import { eq } from "drizzle-orm";
 import { storeItems, type StoreItem } from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
-export type StoreItemEconomyRow = Pick<StoreItem, "id" | "type" | "pricingType" | "coinPriceCents">;
+export type StoreItemEconomyRow = Pick<
+  StoreItem,
+  "id" | "type" | "durationSeconds" | "pricingType" | "coinPriceCents"
+>;
 
 interface GetStoreItemByIdProps {
   db: Transaction;
@@ -17,6 +20,7 @@ export async function getStoreItemById({
     .select({
       id: storeItems.id,
       type: storeItems.type,
+      durationSeconds: storeItems.durationSeconds,
       pricingType: storeItems.pricingType,
       coinPriceCents: storeItems.coinPriceCents,
     })

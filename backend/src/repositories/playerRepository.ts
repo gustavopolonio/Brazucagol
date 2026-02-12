@@ -5,6 +5,7 @@ import { Transaction } from "@/lib/drizzle";
 export type PlayerRow = Pick<Player, "id" | "level" | "vipExpiresAt">;
 export type PlayerIdRow = Pick<Player, "id">;
 export type PlayerCoinsRow = Pick<Player, "id" | "coins">;
+export type PlayerVipRow = Pick<Player, "id" | "vipExpiresAt">;
 
 type DbClient = (typeof import("@/lib/drizzle"))["db"];
 
@@ -87,6 +88,29 @@ export async function getPlayerCoinsForUpdate({
   return (result.rows[0] as PlayerCoinsRow | undefined) ?? null;
 }
 
+interface GetPlayerVipForUpdateProps {
+  db: Transaction;
+  playerId: string;
+}
+
+export async function getPlayerVipForUpdate({
+  db,
+  playerId,
+}: GetPlayerVipForUpdateProps): Promise<PlayerVipRow | null> {
+  const result = await db.execute(sql`
+    select
+      ${players.id} as "id",
+      ${players.vipExpiresAt} as "vipExpiresAt"
+    from ${players}
+    where ${players.id} = ${playerId}
+      and ${players.deletedAt} is null
+    limit 1
+    for update
+  `);
+
+  return (result.rows[0] as PlayerVipRow | undefined) ?? null;
+}
+
 interface DecrementPlayerCoinsProps {
   db: Transaction;
   playerId: string;
@@ -110,4 +134,27 @@ export async function decrementPlayerCoins({
   `);
 
   return (result.rows[0] as PlayerCoinsRow | undefined) ?? null;
+}
+
+interface UpdatePlayerVipExpiresAtProps {
+  db: Transaction;
+  playerId: string;
+  vipExpiresAt: Date;
+}
+
+export async function updatePlayerVipExpiresAt({
+  db,
+  playerId,
+  vipExpiresAt,
+}: UpdatePlayerVipExpiresAtProps): Promise<PlayerVipRow | null> {
+  const rows = await db
+    .update(players)
+    .set({ vipExpiresAt })
+    .where(and(eq(players.id, playerId), isNull(players.deletedAt)))
+    .returning({
+      id: players.id,
+      vipExpiresAt: players.vipExpiresAt,
+    });
+
+  return rows[0] ?? null;
 }
