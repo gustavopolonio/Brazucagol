@@ -16,6 +16,7 @@ import {
   upsertPlayerItemQuantityIncrease,
 } from "@/repositories/playerItemsRepository";
 import { getStoreItemById } from "@/repositories/storeItemsRepository";
+import { createAndDeliverNotification } from "@/services/notification";
 
 const TRANSFER_PROPOSAL_EXPIRATION_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const TRANSFER_PASS_ITEM_TYPE = "transfer_pass";
@@ -56,7 +57,7 @@ export async function createTransferProposal({
   targetPlayerId,
   transferPassItemId,
 }: CreateTransferProposalParams): Promise<ClubTransferResult> {
-  return db.transaction(async (transaction) => {
+  const transactionResult = await db.transaction(async (transaction) => {
     const actorClubMembership = await getPlayerActiveClubMembershipForUpdate({
       db: transaction,
       playerId: actorPlayerId,
@@ -137,15 +138,34 @@ export async function createTransferProposal({
 
     return {
       proposalId: proposal.id,
+      targetPlayerId,
+      actorPlayerId,
+      proposerClubId: actorClubMembership.clubId,
+      proposalExpiresAt,
     };
   });
+
+  await createAndDeliverNotification({
+    playerId: transactionResult.targetPlayerId,
+    type: "transfer_proposal_received",
+    payload: {
+      proposalId: transactionResult.proposalId,
+      fromClubId: transactionResult.proposerClubId,
+      expiresAt: transactionResult.proposalExpiresAt,
+      actorPlayerId: transactionResult.actorPlayerId,
+    },
+  });
+
+  return {
+    proposalId: transactionResult.proposalId,
+  };
 }
 
 export async function acceptTransferProposal({
   proposalId,
   targetPlayerId,
 }: AcceptTransferProposalParams): Promise<ClubTransferResult> {
-  return db.transaction(async (transaction) => {
+  const transactionResult = await db.transaction(async (transaction) => {
     const proposal = await getClubTransferProposalByIdForUpdate({
       db: transaction,
       proposalId,
@@ -215,15 +235,43 @@ export async function acceptTransferProposal({
 
     return {
       proposalId,
+      actorPlayerId: proposal.actorPlayerId,
+      targetPlayerId,
+      previousClubId: proposal.targetPlayerCurrentClubId,
+      newClubId: proposal.proposerClubId,
     };
   });
+
+  await createAndDeliverNotification({
+    playerId: transactionResult.actorPlayerId,
+    type: "transfer_proposal_accepted",
+    payload: {
+      proposalId: transactionResult.proposalId,
+      targetPlayerId: transactionResult.targetPlayerId,
+    },
+  });
+
+  await createAndDeliverNotification({
+    playerId: transactionResult.targetPlayerId,
+    type: "system",
+    payload: {
+      message: "Transfer proposal accepted.",
+      proposalId: transactionResult.proposalId,
+      previousClubId: transactionResult.previousClubId,
+      newClubId: transactionResult.newClubId,
+    },
+  });
+
+  return {
+    proposalId: transactionResult.proposalId,
+  };
 }
 
 export async function denyTransferProposal({
   proposalId,
   targetPlayerId,
 }: DenyTransferProposalParams): Promise<ClubTransferResult> {
-  return db.transaction(async (transaction) => {
+  const transactionResult = await db.transaction(async (transaction) => {
     const proposal = await getClubTransferProposalByIdForUpdate({
       db: transaction,
       proposalId,
@@ -266,6 +314,34 @@ export async function denyTransferProposal({
 
     return {
       proposalId,
+      actorPlayerId: proposal.actorPlayerId,
+      targetPlayerId,
+      transferPassItemId: proposal.transferPassItemId,
     };
   });
+
+  await createAndDeliverNotification({
+    playerId: transactionResult.actorPlayerId,
+    type: "transfer_pass_received",
+    payload: {
+      itemId: transactionResult.transferPassItemId,
+      quantity: 1,
+      reason: "transfer_proposal_denied",
+      proposalId: transactionResult.proposalId,
+    },
+  });
+
+  await createAndDeliverNotification({
+    playerId: transactionResult.actorPlayerId,
+    type: "transfer_proposal_denied",
+    payload: {
+      proposalId: transactionResult.proposalId,
+      targetPlayerId: transactionResult.targetPlayerId,
+      reason: "denied",
+    },
+  });
+
+  return {
+    proposalId: transactionResult.proposalId,
+  };
 }

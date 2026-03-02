@@ -7,25 +7,26 @@ import {
 } from "@/repositories/clubTransferProposalsRepository";
 import { upsertPlayerItemQuantityIncrease } from "@/repositories/playerItemsRepository";
 import { getPlayerById } from "@/repositories/playerRepository";
+import { createNotification } from "@/services/notification";
 
 async function expireTransferProposal(proposalId: string): Promise<void> {
-  await db.transaction(async (transaction) => {
+  const transactionResult = await db.transaction(async (transaction) => {
     const proposal = await getClubTransferProposalByIdForUpdate({
       db: transaction,
       proposalId,
     });
 
     if (!proposal) {
-      return;
+      return null;
     }
 
     if (proposal.status !== "pending" || proposal.resolvedAt !== null) {
-      return;
+      return null;
     }
 
     const currentDate = new Date();
     if (proposal.expiresAt.getTime() >= currentDate.getTime()) {
-      return;
+      return null;
     }
 
     const actorPlayer = await getPlayerById({
@@ -37,7 +38,7 @@ async function expireTransferProposal(proposalId: string): Promise<void> {
       console.warn(
         `[transfer_proposal] skip_expiration_missing_actor proposalId=${proposal.id} actorPlayerId=${proposal.actorPlayerId}`
       );
-      return;
+      return null;
     }
 
     await upsertPlayerItemQuantityIncrease({
@@ -61,6 +62,38 @@ async function expireTransferProposal(proposalId: string): Promise<void> {
     console.log(
       `[transfer_proposal] expired proposalId=${proposal.id} actorPlayerId=${proposal.actorPlayerId} targetPlayerId=${proposal.targetPlayerId}`
     );
+
+    return {
+      proposalId: proposal.id,
+      actorPlayerId: proposal.actorPlayerId,
+      targetPlayerId: proposal.targetPlayerId,
+      transferPassItemId: proposal.transferPassItemId,
+    };
+  });
+
+  if (!transactionResult) {
+    return;
+  }
+
+  await createNotification({
+    playerId: transactionResult.actorPlayerId,
+    type: "transfer_pass_received",
+    payload: {
+      itemId: transactionResult.transferPassItemId,
+      quantity: 1,
+      reason: "transfer_proposal_expired",
+      proposalId: transactionResult.proposalId,
+    },
+  });
+
+  await createNotification({
+    playerId: transactionResult.actorPlayerId,
+    type: "transfer_proposal_denied",
+    payload: {
+      proposalId: transactionResult.proposalId,
+      targetPlayerId: transactionResult.targetPlayerId,
+      reason: "expired",
+    },
   });
 }
 

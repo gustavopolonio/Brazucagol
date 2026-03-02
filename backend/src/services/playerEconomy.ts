@@ -3,6 +3,7 @@ import { insertPlayerItemPurchaseLogWithCoins } from "@/repositories/itemPurchas
 import { decrementPlayerCoins, getPlayerCoinsForUpdate } from "@/repositories/playerRepository";
 import { upsertPlayerItemQuantityIncrease } from "@/repositories/playerItemsRepository";
 import { getStoreItemById } from "@/repositories/storeItemsRepository";
+import { createAndDeliverNotification } from "@/services/notification";
 import { assertPositiveInteger, assertStoreItemAllowsCoins } from "@/utils/validation";
 
 export interface BuyStoreItemWithPlayerCoinsParams {
@@ -22,7 +23,7 @@ export async function buyStoreItemWithPlayerCoins({
 }: BuyStoreItemWithPlayerCoinsParams): Promise<PlayerEconomyOperationResult> {
   assertPositiveInteger(quantity, "quantity");
 
-  return db.transaction(async (transaction) => {
+  const transactionResult = await db.transaction(async (transaction) => {
     const playerCoins = await getPlayerCoinsForUpdate({
       db: transaction,
       playerId: actorPlayerId,
@@ -88,6 +89,44 @@ export async function buyStoreItemWithPlayerCoins({
 
     return {
       playerId: actorPlayerId,
+      storeItemType: storeItem.type,
     };
   });
+
+  if (transactionResult.storeItemType === "vip") {
+    await createAndDeliverNotification({
+      playerId: actorPlayerId,
+      type: "vip_received",
+      payload: {
+        itemId: storeItemId,
+        quantity,
+        reason: "store_purchase_player_coins",
+      },
+    });
+  } else if (transactionResult.storeItemType === "transfer_pass") {
+    await createAndDeliverNotification({
+      playerId: actorPlayerId,
+      type: "transfer_pass_received",
+      payload: {
+        itemId: storeItemId,
+        quantity,
+        reason: "store_purchase_player_coins",
+      },
+    });
+  } else {
+    await createAndDeliverNotification({
+      playerId: actorPlayerId,
+      type: "system",
+      payload: {
+        message: "Item received in inventory.",
+        itemId: storeItemId,
+        quantity,
+        reason: "store_purchase_player_coins",
+      },
+    });
+  }
+
+  return {
+    playerId: actorPlayerId,
+  };
 }

@@ -11,6 +11,7 @@ import { insertClubItemPurchaseLogWithCoins } from "@/repositories/itemPurchaseL
 import { insertItemTransferLog } from "@/repositories/itemTransferLogsRepository";
 import { upsertPlayerItemQuantityIncrease } from "@/repositories/playerItemsRepository";
 import { getStoreItemById } from "@/repositories/storeItemsRepository";
+import { createAndDeliverNotification } from "@/services/notification";
 import { assertPositiveInteger, assertStoreItemAllowsCoins } from "@/utils/validation";
 
 const CLUB_ECONOMY_MANAGER_ROLES: ClubRoleValue[] = ["president", "vice_president", "director"];
@@ -161,7 +162,7 @@ export async function giveClubItemToPlayer({
 }: GiveClubItemToPlayerParams): Promise<ClubEconomyOperationResult> {
   assertPositiveInteger(quantity, "quantity");
 
-  return db.transaction(async (transaction) => {
+  const transactionResult = await db.transaction(async (transaction) => {
     const actorMembership = await getClubMembershipByPlayerAndClubForUpdate({
       db: transaction,
       playerId: actorPlayerId,
@@ -244,6 +245,46 @@ export async function giveClubItemToPlayer({
     return {
       clubId,
       actorPlayerId,
+      targetPlayerId,
+      itemType: storeItem.type,
     };
   });
+
+  if (transactionResult.itemType === "vip") {
+    await createAndDeliverNotification({
+      playerId: transactionResult.targetPlayerId,
+      type: "vip_received",
+      payload: {
+        itemId,
+        quantity,
+        reason,
+      },
+    });
+  } else if (transactionResult.itemType === "transfer_pass") {
+    await createAndDeliverNotification({
+      playerId: transactionResult.targetPlayerId,
+      type: "transfer_pass_received",
+      payload: {
+        itemId,
+        quantity,
+        reason,
+      },
+    });
+  } else {
+    await createAndDeliverNotification({
+      playerId: transactionResult.targetPlayerId,
+      type: "system",
+      payload: {
+        message: "Item received from club inventory.",
+        itemId,
+        quantity,
+        reason,
+      },
+    });
+  }
+
+  return {
+    clubId: transactionResult.clubId,
+    actorPlayerId: transactionResult.actorPlayerId,
+  };
 }

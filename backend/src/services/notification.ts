@@ -43,6 +43,26 @@ export interface MarkAllAsReadResult {
   markedCount: number;
 }
 
+interface PlayerNotificationSocketPayload {
+  id: string;
+  type: NotificationType;
+  payload: Record<string, unknown>;
+  createdAt: Date;
+  readAt: Date | null;
+}
+
+function toPlayerNotificationSocketPayload(
+  notification: PlayerNotificationRow
+): PlayerNotificationSocketPayload {
+  return {
+    id: notification.id,
+    type: notification.type,
+    payload: notification.payload,
+    createdAt: notification.createdAt,
+    readAt: notification.readAt,
+  };
+}
+
 function assertNotificationPayload(payload: Record<string, unknown>): void {
   if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
     throw new Error("payload must be a plain object.");
@@ -93,6 +113,42 @@ export async function createNotification({
       payload,
     });
   });
+}
+
+export async function createAndDeliverNotification({
+  playerId,
+  type,
+  payload,
+}: CreateNotificationParams): Promise<PlayerNotificationRow> {
+  const createdNotification = await createNotification({
+    playerId,
+    type,
+    payload,
+  });
+
+  try {
+    const [{ isPlayerOffline }, { emitToPlayer }] = await Promise.all([
+      import("@/services/gameplayPresenceStore"),
+      import("@/sockets/emitter"),
+    ]);
+
+    const isOffline = await isPlayerOffline(playerId);
+
+    if (!isOffline) {
+      emitToPlayer(
+        playerId,
+        "player:notification",
+        toPlayerNotificationSocketPayload(createdNotification)
+      );
+    }
+  } catch (error) {
+    console.warn(
+      `[notification] failed to deliver realtime notification playerId=${playerId} notificationId=${createdNotification.id}`,
+      error
+    );
+  }
+
+  return createdNotification;
 }
 
 export async function markAsRead({
