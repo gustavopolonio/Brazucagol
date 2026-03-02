@@ -11,6 +11,7 @@ import {
   boolean,
   index,
   foreignKey,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { isNull, sql } from "drizzle-orm";
 
@@ -38,6 +39,14 @@ export const clubTransferProposalStatusEnum = pgEnum("club_transfer_proposal_sta
   "accepted",
   "denied",
   "expired",
+]);
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "vip_received",
+  "transfer_pass_received",
+  "transfer_proposal_received",
+  "transfer_proposal_accepted",
+  "transfer_proposal_denied",
+  "system",
 ]);
 
 export const users = pgTable(
@@ -603,6 +612,24 @@ export const clubChatMessages = pgTable("club_chat_messages", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const playerNotifications = pgTable(
+  "player_notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    playerId: uuid("player_id")
+      .notNull()
+      .references(() => players.id, { onDelete: "cascade" }),
+    type: notificationTypeEnum("type").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("player_notifications_player_id_idx").on(table.playerId),
+    index("player_notifications_player_read_at_idx").on(table.playerId, table.readAt),
+  ]
+);
+
 export const playerRoundStats = pgTable("player_round_stats", {
   id: uuid("id").defaultRandom().primaryKey(),
   playerId: uuid("player_id")
@@ -671,6 +698,7 @@ export type ItemType = (typeof itemTypeEnum.enumValues)[number];
 export type ItemPricingType = (typeof itemPricingTypeEnum.enumValues)[number];
 export type PaymentMethod = (typeof paymentMethodEnum.enumValues)[number];
 export type ClubTransferProposalStatus = (typeof clubTransferProposalStatusEnum.enumValues)[number];
+export type NotificationType = (typeof notificationTypeEnum.enumValues)[number];
 export type SeasonRecordHolder = typeof seasonRecordHolders.$inferSelect;
 export type NewSeasonRecordHolder = typeof seasonRecordHolders.$inferInsert;
 export type Competition = typeof competitions.$inferSelect;
@@ -705,6 +733,8 @@ export type ClubMember = typeof clubMembers.$inferSelect;
 export type NewClubMember = typeof clubMembers.$inferInsert;
 export type ClubChatMessage = typeof clubChatMessages.$inferSelect;
 export type NewClubChatMessage = typeof clubChatMessages.$inferInsert;
+export type PlayerNotification = typeof playerNotifications.$inferSelect;
+export type NewPlayerNotification = typeof playerNotifications.$inferInsert;
 export type PlayerRoundStat = typeof playerRoundStats.$inferSelect;
 export type NewPlayerRoundStat = typeof playerRoundStats.$inferInsert;
 export type PlayerTotalStat = typeof playerTotalStats.$inferSelect;
@@ -735,6 +765,7 @@ export const schema = {
   matches,
   competitionClubs,
   clubChatMessages,
+  playerNotifications,
   playerRoundStats,
   playerTotalStats,
 };
