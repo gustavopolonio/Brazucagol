@@ -3,6 +3,7 @@ import { z } from "zod";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/drizzle";
 import { clubMembers, clubs, levels, players } from "@/db/schema";
+import { getClubCoins } from "@/services/clubCoins";
 import { getClubInventory } from "@/services/clubInventory";
 
 export const publicClubsRoutes = async (fastify: FastifyInstance) => {
@@ -74,7 +75,43 @@ export const protectedClubsRoutes = async (fastify: FastifyInstance) => {
         if (
           error.message === "Actor player not found." ||
           error.message === "Actor player does not belong to this club." ||
-          error.message === "Actor does not have permission to access club inventory."
+          error.message === "Actor does not have permission to access this club resource."
+        ) {
+          return reply.status(403).send({ error: error.message });
+        }
+      }
+
+      throw new Error(error);
+    }
+  });
+
+  fastify.get("/clubs/:clubId/coins", async (request, reply) => {
+    const getClubCoinsParamsSchema = z.object({
+      clubId: z.uuid(),
+    });
+
+    const { clubId } = getClubCoinsParamsSchema.parse(request.params);
+    const session = request.authSession!;
+
+    try {
+      const clubCoins = await getClubCoins({
+        userId: session.user.id,
+        clubId,
+      });
+
+      return reply.status(200).send(clubCoins);
+    } catch (error) {
+      request.log.error(error, "Failed to fetch club coins");
+
+      if (error instanceof Error) {
+        if (error.message === "Club not found.") {
+          return reply.status(404).send({ error: error.message });
+        }
+
+        if (
+          error.message === "Actor player not found." ||
+          error.message === "Actor player does not belong to this club." ||
+          error.message === "Actor does not have permission to access this club resource."
         ) {
           return reply.status(403).send({ error: error.message });
         }

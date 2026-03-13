@@ -1,4 +1,4 @@
-import { inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { clubs, type Club } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { Transaction } from "@/lib/drizzle";
@@ -13,7 +13,20 @@ export async function getClubById(clubId: string): Promise<ClubIdRow | null> {
       id: clubs.id,
     })
     .from(clubs)
-    .where(sql`${clubs.id} = ${clubId} and ${clubs.deletedAt} is null`)
+    .where(and(eq(clubs.id, clubId), isNull(clubs.deletedAt)))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function getClubCoinsById(clubId: string): Promise<ClubCoinsRow | null> {
+  const rows = await db
+    .select({
+      id: clubs.id,
+      coins: clubs.coins,
+    })
+    .from(clubs)
+    .where(and(eq(clubs.id, clubId), isNull(clubs.deletedAt)))
     .limit(1);
 
   return rows[0] ?? null;
