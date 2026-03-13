@@ -5,6 +5,7 @@ import { db } from "@/lib/drizzle";
 import { clubMembers, clubs, levels, players } from "@/db/schema";
 import { getClubCoins } from "@/services/clubCoins";
 import { getClubInventory } from "@/services/clubInventory";
+import { getClubPurchaseHistory } from "@/services/clubPurchaseHistory";
 
 export const publicClubsRoutes = async (fastify: FastifyInstance) => {
   fastify.get("/clubs/:clubId/players", async (request, reply) => {
@@ -112,6 +113,41 @@ export const protectedClubsRoutes = async (fastify: FastifyInstance) => {
           error.message === "Actor player not found." ||
           error.message === "Actor player does not belong to this club." ||
           error.message === "Actor does not have permission to access this club resource."
+        ) {
+          return reply.status(403).send({ error: error.message });
+        }
+      }
+
+      throw new Error(error);
+    }
+  });
+
+  fastify.get("/clubs/:clubId/purchases", async (request, reply) => {
+    const getClubPurchasesParamsSchema = z.object({
+      clubId: z.uuid(),
+    });
+
+    const { clubId } = getClubPurchasesParamsSchema.parse(request.params);
+    const session = request.authSession!;
+
+    try {
+      const purchaseHistory = await getClubPurchaseHistory({
+        userId: session.user.id,
+        clubId,
+      });
+
+      return reply.status(200).send(purchaseHistory);
+    } catch (error) {
+      request.log.error(error, "Failed to fetch club purchase history");
+
+      if (error instanceof Error) {
+        if (error.message === "Club not found.") {
+          return reply.status(404).send({ error: error.message });
+        }
+
+        if (
+          error.message === "Actor player not found." ||
+          error.message === "Actor player does not belong to this club."
         ) {
           return reply.status(403).send({ error: error.message });
         }

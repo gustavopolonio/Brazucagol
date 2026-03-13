@@ -13,10 +13,12 @@ export interface AssertClubManagementAccessParams {
   clubId: string;
 }
 
-export async function assertClubManagementAccess({
-  userId,
-  clubId,
-}: AssertClubManagementAccessParams): Promise<void> {
+interface AssertClubMembershipAccessParams {
+  userId: string;
+  clubId: string;
+}
+
+async function getActorMembershipForClub({ userId, clubId }: AssertClubMembershipAccessParams) {
   const actorPlayer = await getPlayerIdByUserId({
     db,
     userId,
@@ -41,6 +43,28 @@ export async function assertClubManagementAccess({
   if (!actorMembership) {
     throw new Error("Actor player does not belong to this club.");
   }
+
+  return actorMembership;
+}
+
+export async function assertClubMembershipAccess({
+  userId,
+  clubId,
+}: AssertClubMembershipAccessParams): Promise<void> {
+  await getActorMembershipForClub({
+    userId,
+    clubId,
+  });
+}
+
+export async function assertClubManagementAccess({
+  userId,
+  clubId,
+}: AssertClubManagementAccessParams): Promise<void> {
+  const actorMembership = await getActorMembershipForClub({
+    userId,
+    clubId,
+  });
 
   if (!CLUB_MANAGEMENT_ACCESS_ROLES.includes(actorMembership.role)) {
     throw new Error("Actor does not have permission to access this club resource.");
