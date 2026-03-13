@@ -25,6 +25,7 @@ export const clubsRoutes = async (fastify: FastifyInstance) => {
         .select({
           id: players.id,
           name: players.name,
+          role: clubMembers.role,
           levelIconUrl: levels.iconUrl,
         })
         .from(clubMembers)
