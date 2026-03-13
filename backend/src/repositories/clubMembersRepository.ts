@@ -78,6 +78,37 @@ interface GetClubMembershipByPlayerAndClubForUpdateProps {
   clubId: string;
 }
 
+interface GetClubMembershipByPlayerAndClubProps {
+  db: Transaction | DbClient;
+  playerId: string;
+  clubId: string;
+}
+
+export async function getClubMembershipByPlayerAndClub({
+  db,
+  playerId,
+  clubId,
+}: GetClubMembershipByPlayerAndClubProps): Promise<ClubMemberRoleRow | null> {
+  const rows = await db
+    .select({
+      clubId: clubMembers.clubId,
+      playerId: clubMembers.playerId,
+      role: clubMembers.role,
+      leftAt: clubMembers.leftAt,
+    })
+    .from(clubMembers)
+    .where(
+      and(
+        eq(clubMembers.clubId, clubId),
+        eq(clubMembers.playerId, playerId),
+        isNull(clubMembers.leftAt)
+      )
+    )
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
 export async function getClubMembershipByPlayerAndClubForUpdate({
   db,
   playerId,

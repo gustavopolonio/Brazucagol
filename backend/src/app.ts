@@ -5,7 +5,7 @@ import { env } from "./env";
 import { protectedRoutes } from "./plugins/protectedRoutes";
 import { authRoutes } from "./routes/auth";
 import { publicPlayersRoutes } from "./routes/players";
-import { clubsRoutes } from "./routes/clubs";
+import { publicClubsRoutes } from "./routes/clubs";
 import { cupsRoutes } from "./routes/cups";
 import { leaguesRoutes } from "./routes/leagues";
 import { adminRoutes } from "./plugins/adminRoutes";
@@ -27,7 +27,7 @@ fastify.register(fastifyCors, {
 // Non protected routes
 fastify.register(authRoutes);
 fastify.register(publicPlayersRoutes);
-fastify.register(clubsRoutes);
+fastify.register(publicClubsRoutes);
 fastify.register(cupsRoutes);
 fastify.register(leaguesRoutes);
 

@@ -1,8 +1,35 @@
-import { and, eq, sql } from "drizzle-orm";
-import { clubItems, type ClubItem } from "@/db/schema";
+import { and, asc, eq, gt, sql } from "drizzle-orm";
+import { clubItems, storeItems, type ClubItem, type StoreItem } from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
 export type ClubItemQuantityRow = Pick<ClubItem, "clubId" | "itemId" | "quantity">;
+export type ClubInventoryItemRow = Pick<StoreItem, "id" | "name" | "type" | "durationSeconds"> &
+  Pick<ClubItem, "quantity">;
+
+type DbClient = (typeof import("@/lib/drizzle"))["db"];
+
+interface ListClubInventoryItemsByClubIdProps {
+  db: Transaction | DbClient;
+  clubId: string;
+}
+
+export async function listClubInventoryItemsByClubId({
+  db,
+  clubId,
+}: ListClubInventoryItemsByClubIdProps): Promise<ClubInventoryItemRow[]> {
+  return db
+    .select({
+      id: storeItems.id,
+      name: storeItems.name,
+      type: storeItems.type,
+      durationSeconds: storeItems.durationSeconds,
+      quantity: clubItems.quantity,
+    })
+    .from(clubItems)
+    .innerJoin(storeItems, eq(clubItems.itemId, storeItems.id))
+    .where(and(eq(clubItems.clubId, clubId), gt(clubItems.quantity, 0)))
+    .orderBy(asc(storeItems.name));
+}
 
 interface GetClubItemQuantityForUpdateProps {
   db: Transaction;

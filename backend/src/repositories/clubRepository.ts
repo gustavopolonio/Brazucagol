@@ -7,6 +7,18 @@ export type ClubPreviewRow = Pick<Club, "id" | "name" | "logoUrl">;
 export type ClubIdRow = Pick<Club, "id">;
 export type ClubCoinsRow = Pick<Club, "id" | "coins">;
 
+export async function getClubById(clubId: string): Promise<ClubIdRow | null> {
+  const rows = await db
+    .select({
+      id: clubs.id,
+    })
+    .from(clubs)
+    .where(sql`${clubs.id} = ${clubId} and ${clubs.deletedAt} is null`)
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
 export async function getClubsByIds(clubIds: string[]): Promise<ClubPreviewRow[]> {
   const clubsQuery = await db
     .select({
