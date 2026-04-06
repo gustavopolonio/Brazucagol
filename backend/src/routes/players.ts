@@ -11,6 +11,7 @@ import {
 } from "@/services/playerNotifications";
 import { getLoggedPlayerPurchaseHistory } from "@/services/playerPurchaseHistory";
 import { getLoggedPlayerPendingIncomingTransferProposals } from "@/services/playerTransferProposals";
+import { consumeLoggedPlayerVip } from "@/services/playerVipConsumption";
 
 export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
   fastify.get("/players", async (request, reply) => {
@@ -273,6 +274,53 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
       });
     } catch (error) {
       request.log.error(error, "Failed to create player");
+      throw new Error(error);
+    }
+  });
+
+  fastify.post("/players/items/vip/consume", async (request, reply) => {
+    const bodySchema = z
+      .object({
+        itemId: z.uuid(),
+        quantity: z.number().int().positive().optional(),
+        useAll: z.boolean().optional(),
+      })
+      .refine((value) => value.useAll === true || value.quantity !== undefined, {
+        message: "quantity is required when useAll is not true",
+        path: ["quantity"],
+      });
+
+    const { itemId, quantity, useAll } = bodySchema.parse(request.body);
+    const session = request.authSession!;
+
+    try {
+      const result = await consumeLoggedPlayerVip({
+        userId: session.user.id,
+        itemId,
+        quantity,
+        useAll,
+      });
+
+      return reply.status(200).send(result);
+    } catch (error) {
+      request.log.error(error, "Failed to consume VIP item");
+
+      if (error instanceof Error) {
+        if (error.message === "Player not found." || error.message === "Store item not found.") {
+          return reply.status(404).send({ error: error.message });
+        }
+
+        if (
+          error.message === "Provided item is not a VIP item." ||
+          error.message === "VIP item has invalid durationSeconds." ||
+          error.message === "Player does not have enough VIP item quantity." ||
+          error.message === "Unable to consume VIP item." ||
+          error.message === "Unable to extend player VIP."
+        ) {
+          return reply.status(400).send({ error: error.message });
+        }
+      }
+
       throw new Error(error);
     }
   });
