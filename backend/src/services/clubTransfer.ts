@@ -10,6 +10,7 @@ import {
   getClubTransferProposalByIdForUpdate,
   resolveClubTransferProposal,
 } from "@/repositories/clubTransferProposalsRepository";
+import { insertPlayerItemUsageLog } from "@/repositories/itemUsageLogsRepository";
 import {
   decrementPlayerItemQuantity,
   getPlayerItemQuantityForUpdate,
@@ -21,6 +22,7 @@ import { createAndDeliverNotification } from "@/services/notification";
 
 const TRANSFER_PROPOSAL_EXPIRATION_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const TRANSFER_PASS_ITEM_TYPE = "transfer_pass";
+const TRANSFER_PROPOSAL_ACCEPTED_USAGE_REASON = "transfer_proposal_accepted";
 
 export interface CreateTransferProposalParams {
   actorPlayerId: string;
@@ -226,6 +228,14 @@ export async function acceptTransferProposal({
     if (!resolvedProposal) {
       throw new Error("Unable to resolve transfer proposal as accepted.");
     }
+
+    await insertPlayerItemUsageLog({
+      db: transaction,
+      itemId: proposal.transferPassItemId,
+      playerId: proposal.actorPlayerId,
+      quantityUsed: 1,
+      reason: TRANSFER_PROPOSAL_ACCEPTED_USAGE_REASON,
+    });
 
     console.log(
       `[club_transfer] accept_transfer_proposal proposalId=${proposalId} targetPlayerId=${targetPlayerId} proposerClubId=${proposal.proposerClubId} targetPlayerCurrentClubId=${proposal.targetPlayerCurrentClubId}`

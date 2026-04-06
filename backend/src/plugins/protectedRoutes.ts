@@ -1,4 +1,5 @@
 import { protectedPlayersRoutes } from "@/routes/players";
+import { protectedTransferProposalRoutes } from "@/routes/transferProposals";
 import { usersRoutes } from "@/routes/users";
 import { protectedClubsRoutes } from "@/routes/clubs";
 import { FastifyInstance } from "fastify";
@@ -11,6 +12,7 @@ export async function protectedRoutes(fastify: FastifyInstance) {
 
     app.register(protectedPlayersRoutes);
     app.register(protectedClubsRoutes);
+    app.register(protectedTransferProposalRoutes);
     app.register(usersRoutes);
   });
 }
