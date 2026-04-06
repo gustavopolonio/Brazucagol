@@ -6,6 +6,7 @@ import { clubs, clubMembers, levels, playerTotalStats, players, users } from "@/
 import { getLoggedPlayerCoins } from "@/services/playerCoins";
 import { getLoggedPlayerInventory } from "@/services/playerInventory";
 import { getLoggedPlayerPurchaseHistory } from "@/services/playerPurchaseHistory";
+import { getLoggedPlayerPendingIncomingTransferProposals } from "@/services/playerTransferProposals";
 
 export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
   fastify.get("/players", async (request, reply) => {
@@ -102,6 +103,26 @@ export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
 };
 
 export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
+  fastify.get("/players/transfer-proposals/incoming", async (request, reply) => {
+    const session = request.authSession!;
+
+    try {
+      const proposals = await getLoggedPlayerPendingIncomingTransferProposals({
+        userId: session.user.id,
+      });
+
+      return reply.status(200).send(proposals);
+    } catch (error) {
+      request.log.error(error, "Failed to fetch incoming transfer proposals");
+
+      if (error instanceof Error && error.message === "Player not found.") {
+        return reply.status(404).send({ error: error.message });
+      }
+
+      throw new Error(error);
+    }
+  });
+
   fastify.get("/players/purchases", async (request, reply) => {
     const session = request.authSession!;
 

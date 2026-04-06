@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
 import {
   clubTransferProposals,
   type ClubTransferProposalStatus,
@@ -39,6 +39,12 @@ interface ListExpiredPendingClubTransferProposalsProps {
   limit?: number;
 }
 
+interface ListPendingIncomingClubTransferProposalsByTargetPlayerIdProps {
+  db: Transaction | DbClient;
+  targetPlayerId: string;
+  currentDate: Date;
+}
+
 export async function listExpiredPendingClubTransferProposals({
   db,
   currentDate,
@@ -64,6 +70,38 @@ export async function listExpiredPendingClubTransferProposals({
     )
     .orderBy(asc(clubTransferProposals.expiresAt))
     .limit(limit);
+}
+
+export async function listPendingIncomingClubTransferProposalsByTargetPlayerId({
+  db,
+  targetPlayerId,
+  currentDate,
+}: ListPendingIncomingClubTransferProposalsByTargetPlayerIdProps): Promise<
+  ClubTransferProposalRow[]
+> {
+  return db
+    .select({
+      id: clubTransferProposals.id,
+      proposerClubId: clubTransferProposals.proposerClubId,
+      targetPlayerCurrentClubId: clubTransferProposals.targetPlayerCurrentClubId,
+      actorPlayerId: clubTransferProposals.actorPlayerId,
+      targetPlayerId: clubTransferProposals.targetPlayerId,
+      transferPassItemId: clubTransferProposals.transferPassItemId,
+      status: clubTransferProposals.status,
+      expiresAt: clubTransferProposals.expiresAt,
+      createdAt: clubTransferProposals.createdAt,
+      resolvedAt: clubTransferProposals.resolvedAt,
+    })
+    .from(clubTransferProposals)
+    .where(
+      and(
+        eq(clubTransferProposals.targetPlayerId, targetPlayerId),
+        eq(clubTransferProposals.status, "pending"),
+        isNull(clubTransferProposals.resolvedAt),
+        gt(clubTransferProposals.expiresAt, currentDate)
+      )
+    )
+    .orderBy(desc(clubTransferProposals.createdAt), desc(clubTransferProposals.id));
 }
 
 interface CreateClubTransferProposalProps {
