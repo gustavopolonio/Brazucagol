@@ -1,8 +1,35 @@
-import { and, eq, sql } from "drizzle-orm";
-import { playerItems, type PlayerItem } from "@/db/schema";
+import { and, asc, eq, gt, sql } from "drizzle-orm";
+import { playerItems, storeItems, type PlayerItem, type StoreItem } from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
 export type PlayerItemQuantityRow = Pick<PlayerItem, "playerId" | "itemId" | "quantity">;
+export type PlayerInventoryItemRow = Pick<StoreItem, "id" | "name" | "type" | "durationSeconds"> &
+  Pick<PlayerItem, "quantity">;
+
+type DbClient = (typeof import("@/lib/drizzle"))["db"];
+
+interface ListPlayerInventoryItemsByPlayerIdProps {
+  db: Transaction | DbClient;
+  playerId: string;
+}
+
+export async function listPlayerInventoryItemsByPlayerId({
+  db,
+  playerId,
+}: ListPlayerInventoryItemsByPlayerIdProps): Promise<PlayerInventoryItemRow[]> {
+  return db
+    .select({
+      id: storeItems.id,
+      name: storeItems.name,
+      type: storeItems.type,
+      durationSeconds: storeItems.durationSeconds,
+      quantity: playerItems.quantity,
+    })
+    .from(playerItems)
+    .innerJoin(storeItems, eq(playerItems.itemId, storeItems.id))
+    .where(and(eq(playerItems.playerId, playerId), gt(playerItems.quantity, 0)))
+    .orderBy(asc(storeItems.name));
+}
 
 interface UpsertPlayerItemQuantityIncreaseProps {
   db: Transaction;

@@ -3,6 +3,7 @@ import { and, eq, isNull, ne } from "drizzle-orm";
 import { FastifyInstance } from "fastify";
 import { db } from "@/lib/drizzle";
 import { clubs, clubMembers, levels, playerTotalStats, players, users } from "@/db/schema";
+import { getLoggedPlayerInventory } from "@/services/playerInventory";
 
 export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
   fastify.get("/players", async (request, reply) => {
@@ -99,6 +100,26 @@ export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
 };
 
 export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
+  fastify.get("/players/items", async (request, reply) => {
+    const session = request.authSession!;
+
+    try {
+      const inventory = await getLoggedPlayerInventory({
+        userId: session.user.id,
+      });
+
+      return reply.status(200).send(inventory);
+    } catch (error) {
+      request.log.error(error, "Failed to fetch player items");
+
+      if (error instanceof Error && error.message === "Player not found.") {
+        return reply.status(404).send({ error: error.message });
+      }
+
+      throw new Error(error);
+    }
+  });
+
   fastify.post("/players", async (request, reply) => {
     const createPlayerBodySchema = z.object({
       playerName: z.string().trim().min(3).max(100),
