@@ -70,6 +70,27 @@ interface GetPlayerCoinsForUpdateProps {
   playerId: string;
 }
 
+interface GetPlayerCoinsByIdProps {
+  db: Transaction | DbClient;
+  playerId: string;
+}
+
+export async function getPlayerCoinsById({
+  db,
+  playerId,
+}: GetPlayerCoinsByIdProps): Promise<PlayerCoinsRow | null> {
+  const rows = await db
+    .select({
+      id: players.id,
+      coins: players.coins,
+    })
+    .from(players)
+    .where(and(eq(players.id, playerId), isNull(players.deletedAt)))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
 export async function getPlayerCoinsForUpdate({
   db,
   playerId,

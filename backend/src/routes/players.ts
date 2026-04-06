@@ -3,6 +3,7 @@ import { and, eq, isNull, ne } from "drizzle-orm";
 import { FastifyInstance } from "fastify";
 import { db } from "@/lib/drizzle";
 import { clubs, clubMembers, levels, playerTotalStats, players, users } from "@/db/schema";
+import { getLoggedPlayerCoins } from "@/services/playerCoins";
 import { getLoggedPlayerInventory } from "@/services/playerInventory";
 
 export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
@@ -233,6 +234,26 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
       return reply.status(200).send({ player: updatedPlayer });
     } catch (error) {
       request.log.error(error, "Failed to update player");
+      throw new Error(error);
+    }
+  });
+
+  fastify.get("/players/coins", async (request, reply) => {
+    const session = request.authSession!;
+
+    try {
+      const playerCoins = await getLoggedPlayerCoins({
+        userId: session.user.id,
+      });
+
+      return reply.status(200).send(playerCoins);
+    } catch (error) {
+      request.log.error(error, "Failed to fetch player coins");
+
+      if (error instanceof Error && error.message === "Player not found.") {
+        return reply.status(404).send({ error: error.message });
+      }
+
       throw new Error(error);
     }
   });
