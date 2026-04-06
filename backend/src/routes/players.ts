@@ -215,6 +215,26 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
     }
   });
 
+  fastify.get("/players/coins", async (request, reply) => {
+    const session = request.authSession!;
+
+    try {
+      const playerCoins = await getLoggedPlayerCoins({
+        userId: session.user.id,
+      });
+
+      return reply.status(200).send(playerCoins);
+    } catch (error) {
+      request.log.error(error, "Failed to fetch player coins");
+
+      if (error instanceof Error && error.message === "Player not found.") {
+        return reply.status(404).send({ error: error.message });
+      }
+
+      throw new Error(error);
+    }
+  });
+
   fastify.post("/players", async (request, reply) => {
     const createPlayerBodySchema = z.object({
       playerName: z.string().trim().min(3).max(100),
@@ -416,26 +436,6 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
       return reply.status(200).send({ player: updatedPlayer });
     } catch (error) {
       request.log.error(error, "Failed to update player");
-      throw new Error(error);
-    }
-  });
-
-  fastify.get("/players/coins", async (request, reply) => {
-    const session = request.authSession!;
-
-    try {
-      const playerCoins = await getLoggedPlayerCoins({
-        userId: session.user.id,
-      });
-
-      return reply.status(200).send(playerCoins);
-    } catch (error) {
-      request.log.error(error, "Failed to fetch player coins");
-
-      if (error instanceof Error && error.message === "Player not found.") {
-        return reply.status(404).send({ error: error.message });
-      }
-
       throw new Error(error);
     }
   });
