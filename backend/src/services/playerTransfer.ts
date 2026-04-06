@@ -7,16 +7,15 @@ import {
 import { getClubByIdForUpdate } from "@/repositories/clubRepository";
 import {
   decrementPlayerItemQuantity,
-  getPlayerItemQuantityForUpdate,
+  getPlayerOwnedItemByTypeForUpdate,
 } from "@/repositories/playerItemsRepository";
-import { getStoreItemById } from "@/repositories/storeItemsRepository";
+import { getPlayerIdByUserId } from "@/repositories/playerRepository";
 
 const TRANSFER_PASS_ITEM_TYPE = "transfer_pass";
 
 export interface UseTransferPassToJoinClubParams {
-  playerId: string;
+  userId: string;
   destinationClubId: string;
-  transferPassItemId: string;
 }
 
 type PlayerTransferResult = {
@@ -26,14 +25,32 @@ type PlayerTransferResult = {
 };
 
 export async function useTransferPassToJoinClub({
-  playerId,
+  userId,
   destinationClubId,
-  transferPassItemId,
 }: UseTransferPassToJoinClubParams): Promise<PlayerTransferResult> {
   return db.transaction(async (transaction) => {
+    const player = await getPlayerIdByUserId({
+      db: transaction,
+      userId,
+    });
+
+    if (!player) {
+      throw new Error("Player not found.");
+    }
+
+    const transferPassItem = await getPlayerOwnedItemByTypeForUpdate({
+      db: transaction,
+      playerId: player.id,
+      itemType: TRANSFER_PASS_ITEM_TYPE,
+    });
+
+    if (!transferPassItem) {
+      throw new Error("Player does not have enough transfer pass items.");
+    }
+
     const playerClubMembership = await getPlayerActiveClubMembershipForUpdate({
       db: transaction,
-      playerId,
+      playerId: player.id,
     });
 
     if (!playerClubMembership) {
@@ -53,33 +70,10 @@ export async function useTransferPassToJoinClub({
       throw new Error("Destination club not found.");
     }
 
-    const transferPassItem = await getStoreItemById({
-      db: transaction,
-      storeItemId: transferPassItemId,
-    });
-
-    if (!transferPassItem) {
-      throw new Error("Transfer pass item not found.");
-    }
-
-    if (transferPassItem.type !== TRANSFER_PASS_ITEM_TYPE) {
-      throw new Error("Provided item is not a transfer pass.");
-    }
-
-    const transferPassQuantity = await getPlayerItemQuantityForUpdate({
-      db: transaction,
-      playerId,
-      itemId: transferPassItemId,
-    });
-
-    if (!transferPassQuantity || transferPassQuantity.quantity < 1) {
-      throw new Error("Player does not have enough transfer pass items.");
-    }
-
     const consumedTransferPass = await decrementPlayerItemQuantity({
       db: transaction,
-      playerId,
-      itemId: transferPassItemId,
+      playerId: player.id,
+      itemId: transferPassItem.itemId,
       quantityToDecrease: 1,
     });
 
@@ -90,7 +84,7 @@ export async function useTransferPassToJoinClub({
     const currentDate = new Date();
     const removedClubMembership = await markPlayerLeftClub({
       db: transaction,
-      playerId,
+      playerId: player.id,
       clubId: playerClubMembership.clubId,
       leftAt: currentDate,
     });
@@ -101,17 +95,17 @@ export async function useTransferPassToJoinClub({
 
     await createClubMembership({
       db: transaction,
-      playerId,
+      playerId: player.id,
       clubId: destinationClubId,
       role: "player",
     });
 
     console.log(
-      `[player_transfer] use_transfer_pass_to_join_club playerId=${playerId} previousClubId=${playerClubMembership.clubId} destinationClubId=${destinationClubId} transferPassItemId=${transferPassItemId}`
+      `[player_transfer] use_transfer_pass_to_join_club playerId=${player.id} previousClubId=${playerClubMembership.clubId} destinationClubId=${destinationClubId} transferPassItemId=${transferPassItem.itemId}`
     );
 
     return {
-      playerId,
+      playerId: player.id,
       previousClubId: playerClubMembership.clubId,
       destinationClubId,
     };

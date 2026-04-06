@@ -5,6 +5,11 @@ import { Transaction } from "@/lib/drizzle";
 export type PlayerItemQuantityRow = Pick<PlayerItem, "playerId" | "itemId" | "quantity">;
 export type PlayerInventoryItemRow = Pick<StoreItem, "id" | "name" | "type" | "durationSeconds"> &
   Pick<PlayerItem, "quantity">;
+export type PlayerOwnedItemByTypeForUpdateRow = Pick<
+  PlayerItem,
+  "playerId" | "itemId" | "quantity"
+> &
+  Pick<StoreItem, "type">;
 
 type DbClient = (typeof import("@/lib/drizzle"))["db"];
 
@@ -29,6 +34,36 @@ export async function listPlayerInventoryItemsByPlayerId({
     .innerJoin(storeItems, eq(playerItems.itemId, storeItems.id))
     .where(and(eq(playerItems.playerId, playerId), gt(playerItems.quantity, 0)))
     .orderBy(asc(storeItems.name));
+}
+
+interface GetPlayerOwnedItemByTypeForUpdateProps {
+  db: Transaction;
+  playerId: string;
+  itemType: StoreItem["type"];
+}
+
+export async function getPlayerOwnedItemByTypeForUpdate({
+  db,
+  playerId,
+  itemType,
+}: GetPlayerOwnedItemByTypeForUpdateProps): Promise<PlayerOwnedItemByTypeForUpdateRow | null> {
+  const result = await db.execute(sql`
+    select
+      ${playerItems.playerId} as "playerId",
+      ${playerItems.itemId} as "itemId",
+      ${playerItems.quantity} as "quantity",
+      ${storeItems.type} as "type"
+    from ${playerItems}
+    inner join ${storeItems}
+      on ${playerItems.itemId} = ${storeItems.id}
+    where ${playerItems.playerId} = ${playerId}
+      and ${storeItems.type} = ${itemType}
+      and ${playerItems.quantity} > 0
+    limit 1
+    for update
+  `);
+
+  return (result.rows[0] as PlayerOwnedItemByTypeForUpdateRow | undefined) ?? null;
 }
 
 interface UpsertPlayerItemQuantityIncreaseProps {

@@ -10,6 +10,7 @@ import {
   getLoggedPlayerUnreadNotificationsCount,
 } from "@/services/playerNotifications";
 import { getLoggedPlayerPurchaseHistory } from "@/services/playerPurchaseHistory";
+import { useTransferPassToJoinClub } from "@/services/playerTransfer";
 import { getLoggedPlayerPendingIncomingTransferProposals } from "@/services/playerTransferProposals";
 import { consumeLoggedPlayerVip } from "@/services/playerVipConsumption";
 
@@ -316,6 +317,47 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
           error.message === "Player does not have enough VIP item quantity." ||
           error.message === "Unable to consume VIP item." ||
           error.message === "Unable to extend player VIP."
+        ) {
+          return reply.status(400).send({ error: error.message });
+        }
+      }
+
+      throw new Error(error);
+    }
+  });
+
+  fastify.post("/players/items/transfer-pass/use", async (request, reply) => {
+    const bodySchema = z.object({
+      targetClubId: z.uuid(),
+    });
+
+    const { targetClubId } = bodySchema.parse(request.body);
+    const session = request.authSession!;
+
+    try {
+      const transfer = await useTransferPassToJoinClub({
+        userId: session.user.id,
+        destinationClubId: targetClubId,
+      });
+
+      return reply.status(200).send(transfer);
+    } catch (error) {
+      request.log.error(error, "Failed to use transfer pass to change clubs");
+
+      if (error instanceof Error) {
+        if (
+          error.message === "Player not found." ||
+          error.message === "Destination club not found."
+        ) {
+          return reply.status(404).send({ error: error.message });
+        }
+
+        if (
+          error.message === "Player does not belong to any club." ||
+          error.message === "Player already belongs to destination club." ||
+          error.message === "Player does not have enough transfer pass items." ||
+          error.message === "Unable to consume transfer pass item." ||
+          error.message === "Unable to leave current club."
         ) {
           return reply.status(400).send({ error: error.message });
         }
