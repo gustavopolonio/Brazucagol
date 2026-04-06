@@ -7,6 +7,7 @@ import { getClubCoins } from "@/services/clubCoins";
 import { getClubInventory } from "@/services/clubInventory";
 import { getClubItemTransferHistory } from "@/services/clubItemTransferHistory";
 import { getClubPurchaseHistory } from "@/services/clubPurchaseHistory";
+import { giveClubItem } from "@/services/clubItemGive";
 import { buyClubStoreItemWithCoins } from "@/services/clubStorePurchase";
 
 export const publicClubsRoutes = async (fastify: FastifyInstance) => {
@@ -239,6 +240,63 @@ export const protectedClubsRoutes = async (fastify: FastifyInstance) => {
           error.message === "Store item does not have a coin price." ||
           error.message === "Club does not have enough coins." ||
           error.message === "Unable to complete club item purchase."
+        ) {
+          return reply.status(400).send({ error: error.message });
+        }
+      }
+
+      throw new Error(error);
+    }
+  });
+
+  fastify.post("/clubs/:clubId/items/give", async (request, reply) => {
+    const giveClubItemParamsSchema = z.object({
+      clubId: z.uuid(),
+    });
+
+    const giveClubItemBodySchema = z.object({
+      targetPlayerId: z.uuid(),
+      itemId: z.uuid(),
+      quantity: z.number().int().positive(),
+      reason: z.string().trim().min(1).max(255),
+    });
+
+    const { clubId } = giveClubItemParamsSchema.parse(request.params);
+    const { targetPlayerId, itemId, quantity, reason } = giveClubItemBodySchema.parse(request.body);
+    const session = request.authSession!;
+
+    try {
+      const transfer = await giveClubItem({
+        userId: session.user.id,
+        clubId,
+        targetPlayerId,
+        itemId,
+        quantity,
+        reason,
+      });
+
+      return reply.status(200).send(transfer);
+    } catch (error) {
+      request.log.error(error, "Failed to give club item to player");
+
+      if (error instanceof Error) {
+        if (error.message === "Item not found.") {
+          return reply.status(404).send({ error: error.message });
+        }
+
+        if (
+          error.message === "Actor player not found." ||
+          error.message === "Actor player does not belong to this club." ||
+          error.message === "Actor does not have permission to manage club economy." ||
+          error.message === "Actor does not have permission to manage VIP items."
+        ) {
+          return reply.status(403).send({ error: error.message });
+        }
+
+        if (
+          error.message === "Target player does not belong to this club." ||
+          error.message === "Club does not have enough item quantity." ||
+          error.message === "Unable to update club item quantity."
         ) {
           return reply.status(400).send({ error: error.message });
         }
