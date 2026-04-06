@@ -9,10 +9,20 @@ export type ClubPurchaseHistoryRow = Pick<
   "id" | "itemId" | "paymentMethod" | "unitPrice" | "quantity" | "purchasedAt"
 > &
   Pick<StoreItem, "name" | "type" | "durationSeconds">;
+export type PlayerPurchaseHistoryRow = Pick<
+  ItemPurchaseLog,
+  "id" | "itemId" | "paymentMethod" | "unitPrice" | "quantity" | "purchasedAt"
+> &
+  Pick<StoreItem, "name" | "type" | "durationSeconds">;
 
 interface ListClubPurchaseHistoryProps {
   db: Transaction | DbClient;
   clubId: string;
+}
+
+interface ListPlayerPurchaseHistoryProps {
+  db: Transaction | DbClient;
+  playerId: string;
 }
 
 export async function listClubPurchaseHistory({
@@ -34,6 +44,28 @@ export async function listClubPurchaseHistory({
     .from(itemPurchaseLogs)
     .innerJoin(storeItems, eq(itemPurchaseLogs.itemId, storeItems.id))
     .where(and(eq(itemPurchaseLogs.clubId, clubId), isNotNull(itemPurchaseLogs.clubId)))
+    .orderBy(desc(itemPurchaseLogs.purchasedAt), desc(itemPurchaseLogs.id));
+}
+
+export async function listPlayerPurchaseHistory({
+  db,
+  playerId,
+}: ListPlayerPurchaseHistoryProps): Promise<PlayerPurchaseHistoryRow[]> {
+  return db
+    .select({
+      id: itemPurchaseLogs.id,
+      itemId: itemPurchaseLogs.itemId,
+      name: storeItems.name,
+      type: storeItems.type,
+      durationSeconds: storeItems.durationSeconds,
+      paymentMethod: itemPurchaseLogs.paymentMethod,
+      unitPrice: itemPurchaseLogs.unitPrice,
+      quantity: itemPurchaseLogs.quantity,
+      purchasedAt: itemPurchaseLogs.purchasedAt,
+    })
+    .from(itemPurchaseLogs)
+    .innerJoin(storeItems, eq(itemPurchaseLogs.itemId, storeItems.id))
+    .where(and(eq(itemPurchaseLogs.playerId, playerId), isNotNull(itemPurchaseLogs.playerId)))
     .orderBy(desc(itemPurchaseLogs.purchasedAt), desc(itemPurchaseLogs.id));
 }
 

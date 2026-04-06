@@ -5,6 +5,7 @@ import { db } from "@/lib/drizzle";
 import { clubs, clubMembers, levels, playerTotalStats, players, users } from "@/db/schema";
 import { getLoggedPlayerCoins } from "@/services/playerCoins";
 import { getLoggedPlayerInventory } from "@/services/playerInventory";
+import { getLoggedPlayerPurchaseHistory } from "@/services/playerPurchaseHistory";
 
 export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
   fastify.get("/players", async (request, reply) => {
@@ -101,6 +102,26 @@ export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
 };
 
 export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
+  fastify.get("/players/purchases", async (request, reply) => {
+    const session = request.authSession!;
+
+    try {
+      const purchaseHistory = await getLoggedPlayerPurchaseHistory({
+        userId: session.user.id,
+      });
+
+      return reply.status(200).send(purchaseHistory);
+    } catch (error) {
+      request.log.error(error, "Failed to fetch player purchase history");
+
+      if (error instanceof Error && error.message === "Player not found.") {
+        return reply.status(404).send({ error: error.message });
+      }
+
+      throw new Error(error);
+    }
+  });
+
   fastify.get("/players/items", async (request, reply) => {
     const session = request.authSession!;
 
