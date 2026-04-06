@@ -5,6 +5,7 @@ import { db } from "@/lib/drizzle";
 import { clubs, clubMembers, levels, playerTotalStats, players, users } from "@/db/schema";
 import { getLoggedPlayerCoins } from "@/services/playerCoins";
 import { getLoggedPlayerInventory } from "@/services/playerInventory";
+import { getLoggedPlayerLatestNotifications } from "@/services/playerNotifications";
 import { getLoggedPlayerPurchaseHistory } from "@/services/playerPurchaseHistory";
 import { getLoggedPlayerPendingIncomingTransferProposals } from "@/services/playerTransferProposals";
 
@@ -103,6 +104,32 @@ export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
 };
 
 export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
+  fastify.get("/players/notifications", async (request, reply) => {
+    const querySchema = z.object({
+      limit: z.coerce.number().int().positive().max(100).default(50),
+    });
+
+    const { limit } = querySchema.parse(request.query);
+    const session = request.authSession!;
+
+    try {
+      const notifications = await getLoggedPlayerLatestNotifications({
+        userId: session.user.id,
+        limit,
+      });
+
+      return reply.status(200).send(notifications);
+    } catch (error) {
+      request.log.error(error, "Failed to fetch player notifications");
+
+      if (error instanceof Error && error.message === "Player not found.") {
+        return reply.status(404).send({ error: error.message });
+      }
+
+      throw new Error(error);
+    }
+  });
+
   fastify.get("/players/transfer-proposals/incoming", async (request, reply) => {
     const session = request.authSession!;
 
