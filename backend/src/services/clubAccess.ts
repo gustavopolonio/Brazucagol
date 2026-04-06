@@ -18,6 +18,19 @@ interface AssertClubMembershipAccessParams {
   clubId: string;
 }
 
+export function clubRoleHasManagementAccess(actorRole: ClubRoleValue): boolean {
+  return CLUB_MANAGEMENT_ACCESS_ROLES.includes(actorRole);
+}
+
+export function assertClubManagementRoleAccess(
+  actorRole: ClubRoleValue,
+  errorMessage: string
+): void {
+  if (!clubRoleHasManagementAccess(actorRole)) {
+    throw new Error(errorMessage);
+  }
+}
+
 async function getActorMembershipForClub({ userId, clubId }: AssertClubMembershipAccessParams) {
   const actorPlayer = await getPlayerIdByUserId({
     db,
@@ -66,7 +79,8 @@ export async function assertClubManagementAccess({
     clubId,
   });
 
-  if (!CLUB_MANAGEMENT_ACCESS_ROLES.includes(actorMembership.role)) {
-    throw new Error("Actor does not have permission to access this club resource.");
-  }
+  assertClubManagementRoleAccess(
+    actorMembership.role,
+    "Actor does not have permission to access this club resource."
+  );
 }

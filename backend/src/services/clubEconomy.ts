@@ -11,10 +11,10 @@ import { insertClubItemPurchaseLogWithCoins } from "@/repositories/itemPurchaseL
 import { insertItemTransferLog } from "@/repositories/itemTransferLogsRepository";
 import { upsertPlayerItemQuantityIncrease } from "@/repositories/playerItemsRepository";
 import { getStoreItemById } from "@/repositories/storeItemsRepository";
+import { assertClubManagementRoleAccess } from "@/services/clubAccess";
 import { createAndDeliverNotification } from "@/services/notification";
 import { assertPositiveInteger, assertStoreItemAllowsCoins } from "@/utils/validation";
 
-const CLUB_ECONOMY_MANAGER_ROLES: ClubRoleValue[] = ["president", "vice_president", "director"];
 const CLUB_VIP_MANAGER_ROLES: ClubRoleValue[] = ["president", "vice_president"];
 
 export interface SpendClubCoinsParams {
@@ -46,9 +46,10 @@ type ClubEconomyOperationResult = {
 };
 
 function assertActorCanManageClubEconomy(actorRole: ClubRoleValue): void {
-  if (!CLUB_ECONOMY_MANAGER_ROLES.includes(actorRole)) {
-    throw new Error("Actor does not have permission to manage club economy.");
-  }
+  assertClubManagementRoleAccess(
+    actorRole,
+    "Actor does not have permission to manage club economy."
+  );
 }
 
 function assertActorCanManageVipItems(actorRole: ClubRoleValue): void {

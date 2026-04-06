@@ -16,11 +16,11 @@ import {
   upsertPlayerItemQuantityIncrease,
 } from "@/repositories/playerItemsRepository";
 import { getStoreItemById } from "@/repositories/storeItemsRepository";
+import { assertClubManagementRoleAccess } from "@/services/clubAccess";
 import { createAndDeliverNotification } from "@/services/notification";
 
 const TRANSFER_PROPOSAL_EXPIRATION_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const TRANSFER_PASS_ITEM_TYPE = "transfer_pass";
-const CLUB_TRANSFER_MANAGER_ROLES: ClubRoleValue[] = ["president", "vice_president", "director"];
 
 export interface CreateTransferProposalParams {
   actorPlayerId: string;
@@ -43,9 +43,7 @@ type ClubTransferResult = {
 };
 
 function assertActorCanProposeTransfer(actorRole: ClubRoleValue): void {
-  if (!CLUB_TRANSFER_MANAGER_ROLES.includes(actorRole)) {
-    throw new Error("Actor does not have permission to propose transfers.");
-  }
+  assertClubManagementRoleAccess(actorRole, "Actor does not have permission to propose transfers.");
 }
 
 function resolveProposalExpirationDate(currentDate: Date): Date {
