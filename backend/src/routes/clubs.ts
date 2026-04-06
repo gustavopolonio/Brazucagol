@@ -7,6 +7,7 @@ import { getClubCoins } from "@/services/clubCoins";
 import { getClubInventory } from "@/services/clubInventory";
 import { getClubItemTransferHistory } from "@/services/clubItemTransferHistory";
 import { getClubPurchaseHistory } from "@/services/clubPurchaseHistory";
+import { buyClubStoreItemWithCoins } from "@/services/clubStorePurchase";
 
 export const publicClubsRoutes = async (fastify: FastifyInstance) => {
   fastify.get("/clubs/:clubId/players", async (request, reply) => {
@@ -186,6 +187,60 @@ export const protectedClubsRoutes = async (fastify: FastifyInstance) => {
           error.message === "Actor player does not belong to this club."
         ) {
           return reply.status(403).send({ error: error.message });
+        }
+      }
+
+      throw new Error(error);
+    }
+  });
+
+  fastify.post("/clubs/:clubId/items/purchase", async (request, reply) => {
+    const buyClubItemParamsSchema = z.object({
+      clubId: z.uuid(),
+    });
+
+    const buyClubItemBodySchema = z.object({
+      storeItemId: z.uuid(),
+      quantity: z.number().int().positive(),
+    });
+
+    const { clubId } = buyClubItemParamsSchema.parse(request.params);
+    const { storeItemId, quantity } = buyClubItemBodySchema.parse(request.body);
+    const session = request.authSession!;
+
+    try {
+      const purchase = await buyClubStoreItemWithCoins({
+        userId: session.user.id,
+        clubId,
+        storeItemId,
+        quantity,
+      });
+
+      return reply.status(200).send(purchase);
+    } catch (error) {
+      request.log.error(error, "Failed to buy club item with coins");
+
+      if (error instanceof Error) {
+        if (error.message === "Store item not found." || error.message === "Club not found.") {
+          return reply.status(404).send({ error: error.message });
+        }
+
+        if (
+          error.message === "Actor player not found." ||
+          error.message === "Actor player does not belong to this club." ||
+          error.message === "Actor does not have permission to manage club economy." ||
+          error.message === "Actor does not have permission to manage VIP items."
+        ) {
+          return reply.status(403).send({ error: error.message });
+        }
+
+        if (
+          error.message === "Store item cannot be purchased with club coins." ||
+          error.message === "Store item does not have a coin price." ||
+          error.message === "Club does not have enough coins." ||
+          error.message === "Unable to complete club item purchase."
+        ) {
+          return reply.status(400).send({ error: error.message });
         }
       }
 
