@@ -59,6 +59,12 @@ const vips: Vip[] = [
     isAvailableInStore: false,
   },
   {
+    name: "VIP - 1 hora",
+    durationSeconds: 60 * 60, // 1 hour
+    realMoneyPriceCents: 399,
+    isAvailableInStore: false,
+  },
+  {
     name: "VIP - 30 minutos",
     durationSeconds: 30 * 60, // 30 min
     realMoneyPriceCents: 399,
