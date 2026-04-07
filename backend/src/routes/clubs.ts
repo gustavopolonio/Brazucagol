@@ -8,7 +8,10 @@ import { getClubInventory } from "@/services/clubInventory";
 import { getClubItemTransferHistory } from "@/services/clubItemTransferHistory";
 import { getClubPurchaseHistory } from "@/services/clubPurchaseHistory";
 import { giveClubItem } from "@/services/clubItemGive";
-import { claimClubPresidencyForUser } from "@/services/clubPresidencyManagement";
+import {
+  claimClubPresidencyForUser,
+  resignClubPresidencyForUser,
+} from "@/services/clubPresidencyManagement";
 import {
   assignClubRoleForUser,
   removeClubRoleForUser,
@@ -479,6 +482,42 @@ export const protectedClubsRoutes = async (fastify: FastifyInstance) => {
           error.message === "Player needs an active VIP to claim presidency." ||
           error.message === "Club already has a president." ||
           error.message === "Unable to assign presidency role."
+        ) {
+          return reply.status(400).send({ error: error.message });
+        }
+      }
+
+      throw new Error(error);
+    }
+  });
+
+  fastify.post("/clubs/:clubId/presidency/resign", async (request, reply) => {
+    const resignClubPresidencyParamsSchema = z.object({
+      clubId: z.uuid(),
+    });
+
+    const { clubId } = resignClubPresidencyParamsSchema.parse(request.params);
+    const session = request.authSession!;
+
+    try {
+      const presidencyChange = await resignClubPresidencyForUser({
+        userId: session.user.id,
+        clubId,
+      });
+
+      return reply.status(200).send(presidencyChange);
+    } catch (error) {
+      request.log.error(error, "Failed to resign club presidency");
+
+      if (error instanceof Error) {
+        if (error.message === "Actor player not found.") {
+          return reply.status(404).send({ error: error.message });
+        }
+
+        if (
+          error.message === "Actor player does not belong to this club." ||
+          error.message === "Only the current president can make presidency available." ||
+          error.message === "Unable to remove president role."
         ) {
           return reply.status(400).send({ error: error.message });
         }
