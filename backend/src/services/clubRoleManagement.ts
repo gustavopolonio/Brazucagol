@@ -1,6 +1,6 @@
 import { db } from "@/lib/drizzle";
 import { getPlayerIdByUserId } from "@/repositories/playerRepository";
-import { assignRole } from "@/services/clubRole";
+import { assignRole, removeRole } from "@/services/clubRole";
 
 type AssignableClubRole = "vice_president" | "director" | "captain";
 
@@ -31,5 +31,36 @@ export async function assignClubRoleForUser({
     targetPlayerId,
     clubId,
     roleToAssign,
+  });
+}
+
+export interface RemoveClubRoleForUserParams {
+  userId: string;
+  clubId: string;
+  targetPlayerId: string;
+}
+
+export async function removeClubRoleForUser({
+  userId,
+  clubId,
+  targetPlayerId,
+}: RemoveClubRoleForUserParams) {
+  const actorPlayer = await getPlayerIdByUserId({
+    db,
+    userId,
+  });
+
+  if (!actorPlayer) {
+    throw new Error("Actor player not found.");
+  }
+
+  if (actorPlayer.id === targetPlayerId) {
+    throw new Error("Use the self role removal flow for your own role.");
+  }
+
+  return removeRole({
+    actorPlayerId: actorPlayer.id,
+    targetPlayerId,
+    clubId,
   });
 }

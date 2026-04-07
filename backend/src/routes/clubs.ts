@@ -8,7 +8,7 @@ import { getClubInventory } from "@/services/clubInventory";
 import { getClubItemTransferHistory } from "@/services/clubItemTransferHistory";
 import { getClubPurchaseHistory } from "@/services/clubPurchaseHistory";
 import { giveClubItem } from "@/services/clubItemGive";
-import { assignClubRoleForUser } from "@/services/clubRoleManagement";
+import { assignClubRoleForUser, removeClubRoleForUser } from "@/services/clubRoleManagement";
 import { buyClubStoreItemWithCoins } from "@/services/clubStorePurchase";
 
 export const publicClubsRoutes = async (fastify: FastifyInstance) => {
@@ -350,6 +350,54 @@ export const protectedClubsRoutes = async (fastify: FastifyInstance) => {
           error.message === "Role limit reached for director." ||
           error.message === "Role limit reached for captain." ||
           error.message === "Failed to assign role to target player."
+        ) {
+          return reply.status(400).send({ error: error.message });
+        }
+      }
+
+      throw new Error(error);
+    }
+  });
+
+  fastify.post("/clubs/:clubId/roles/remove", async (request, reply) => {
+    const removeClubRoleParamsSchema = z.object({
+      clubId: z.uuid(),
+    });
+
+    const removeClubRoleBodySchema = z.object({
+      targetPlayerId: z.uuid(),
+    });
+
+    const { clubId } = removeClubRoleParamsSchema.parse(request.params);
+    const { targetPlayerId } = removeClubRoleBodySchema.parse(request.body);
+    const session = request.authSession!;
+
+    try {
+      const roleChange = await removeClubRoleForUser({
+        userId: session.user.id,
+        clubId,
+        targetPlayerId,
+      });
+
+      return reply.status(200).send(roleChange);
+    } catch (error) {
+      request.log.error(error, "Failed to remove club role");
+
+      if (error instanceof Error) {
+        if (
+          error.message === "Actor player not found." ||
+          error.message === "Actor does not have permission to remove this role." ||
+          error.message === "Actor player does not belong to this club."
+        ) {
+          return reply.status(403).send({ error: error.message });
+        }
+
+        if (
+          error.message === "Use the self role removal flow for your own role." ||
+          error.message === "Target player does not belong to this club." ||
+          error.message === "Cannot remove president role." ||
+          error.message === "Target player already has default role." ||
+          error.message === "Failed to remove target role."
         ) {
           return reply.status(400).send({ error: error.message });
         }
