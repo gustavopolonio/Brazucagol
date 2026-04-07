@@ -1,6 +1,8 @@
 import { env } from "@/env";
 import { db } from "@/lib/drizzle";
+import { redisClient } from "@/lib/redis";
 import { finalizeRoundMatches } from "@/services/match/finalize";
+import { buildRoundLeaderboardRewardProcessedKey } from "@/redis/keys/leaderboard";
 import {
   getEarliestInProgressRoundDate,
   getEarliestPendingRoundDate,
@@ -14,6 +16,9 @@ import {
   buildLeagueRoundId,
   checkRoundSeasonRecordForRoundId,
 } from "@/services/leaderboardService";
+import { processRoundLeaderboardRewards } from "@/services/roundLeaderboardRewardsService";
+
+const ROUND_REWARD_PROCESSED_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 type RoundActionResult = {
   roundDate: Date | null;
@@ -131,11 +136,52 @@ async function checkRoundSeasonRecords(roundDate: Date): Promise<void> {
   }
 }
 
+async function processRoundLeaderboardRewardsForDate(roundDate: Date): Promise<void> {
+  const roundContexts = await getRoundSeasonContextsByDate({ db, roundDate });
+
+  for (const roundContext of roundContexts) {
+    const roundId =
+      roundContext.matchType === "league"
+        ? roundContext.leagueRound === null
+          ? null
+          : buildLeagueRoundId({
+              competitionId: roundContext.competitionId,
+              leagueRound: roundContext.leagueRound,
+            })
+        : roundContext.cupRoundId;
+
+    if (!roundId) {
+      continue;
+    }
+
+    const rewardProcessedKey = buildRoundLeaderboardRewardProcessedKey(roundId);
+    const rewardProcessed = await redisClient.set(
+      rewardProcessedKey,
+      "1",
+      "EX",
+      ROUND_REWARD_PROCESSED_TTL_SECONDS,
+      "NX"
+    );
+
+    if (rewardProcessed !== "OK") {
+      continue;
+    }
+
+    try {
+      await processRoundLeaderboardRewards(roundId);
+    } catch (error) {
+      await redisClient.del(rewardProcessedKey);
+      throw error;
+    }
+  }
+}
+
 export async function runMatchLifecycleWorkerOnce() {
   const finishedRound = await finishDueRound({ currentTime: new Date("2026-02-14T21:00:00Z") });
 
   if (finishedRound.roundDate && finishedRound.matchesCount > 0) {
     await checkRoundSeasonRecords(finishedRound.roundDate);
+    await processRoundLeaderboardRewardsForDate(finishedRound.roundDate);
   }
 
   await startDueRound({ currentTime: new Date("2026-02-14T21:00:00Z") });
