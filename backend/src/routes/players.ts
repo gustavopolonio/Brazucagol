@@ -8,6 +8,7 @@ import { getLoggedPlayerInventory } from "@/services/playerInventory";
 import {
   getLoggedPlayerLatestNotifications,
   getLoggedPlayerUnreadNotificationsCount,
+  markAllLoggedPlayerNotificationsAsRead,
   markLoggedPlayerNotificationAsRead,
 } from "@/services/playerNotifications";
 import { getLoggedPlayerPurchaseHistory } from "@/services/playerPurchaseHistory";
@@ -463,6 +464,26 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
         error instanceof Error &&
         (error.message === "Player not found." || error.message === "Notification not found.")
       ) {
+        return reply.status(404).send({ error: error.message });
+      }
+
+      throw new Error(error);
+    }
+  });
+
+  fastify.patch("/players/notifications/read-all", async (request, reply) => {
+    const session = request.authSession!;
+
+    try {
+      const result = await markAllLoggedPlayerNotificationsAsRead({
+        userId: session.user.id,
+      });
+
+      return reply.status(200).send(result);
+    } catch (error) {
+      request.log.error(error, "Failed to mark all player notifications as read");
+
+      if (error instanceof Error && error.message === "Player not found.") {
         return reply.status(404).send({ error: error.message });
       }
 
