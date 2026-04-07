@@ -1,7 +1,10 @@
 import { env } from "@/env";
 import { db } from "@/lib/drizzle";
 import { redisClient } from "@/lib/redis";
-import { buildSeasonRecordHourProcessedKey } from "@/redis/keys/leaderboard";
+import {
+  buildHourLeaderboardRewardProcessedKey,
+  buildSeasonRecordHourProcessedKey,
+} from "@/redis/keys/leaderboard";
 import {
   getInProgressCupRoundId,
   getInProgressLeagueRound,
@@ -14,7 +17,10 @@ import {
   refreshRoundLeaderboardSnapshot,
   refreshSeasonLeaderboardSnapshot,
 } from "@/services/leaderboardService";
+import { processHourLeaderboardRewards } from "@/services/hourLeaderboardRewardsService";
 import { toZonedHourKey } from "@/utils";
+
+const HOUR_REWARD_PROCESSED_TTL_SECONDS = 60 * 60 * 2;
 
 async function refreshActiveRoundSnapshots(): Promise<void> {
   const leagueRound = await getInProgressLeagueRound({ db });
@@ -48,6 +54,27 @@ export async function runLeaderboardSnapshotWorkerOnce() {
 
   await refreshCurrentHourLeaderboardSnapshot();
   await refreshActiveRoundSnapshots();
+
+  const hourRewardProcessedKey = buildHourLeaderboardRewardProcessedKey(previousHourKey);
+
+  if (previousHourKey !== currentHourKey) {
+    const hourRewardProcessed = await redisClient.set(
+      hourRewardProcessedKey,
+      "1",
+      "EX",
+      HOUR_REWARD_PROCESSED_TTL_SECONDS,
+      "NX"
+    );
+
+    if (hourRewardProcessed === "OK") {
+      try {
+        await processHourLeaderboardRewards(previousHourKey);
+      } catch (error) {
+        await redisClient.del(hourRewardProcessedKey);
+        throw error;
+      }
+    }
+  }
 
   const seasonId = await getInProgressSeasonId({ db });
 

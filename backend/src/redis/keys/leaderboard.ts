@@ -20,3 +20,7 @@ export function buildLeaderboardCacheRoundKey(roundId: string) {
 export function buildSeasonRecordHourProcessedKey(hourKey: string) {
   return `season_record:v1:hour_processed:${hourKey}`;
 }
+
+export function buildHourLeaderboardRewardProcessedKey(hourKey: string) {
+  return `leaderboard_reward:v1:hour_processed:${hourKey}`;
+}
