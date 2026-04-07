@@ -6,7 +6,11 @@ import { resolveCooldownTtlInSeconds } from "@/utils/gameplay";
 import { getPlayerClubMembership } from "@/repositories/clubMembersRepository";
 import { getLevelForTotalGoals } from "@/repositories/levelsRepository";
 import { getMatchByIdForUpdate, incrementMatchGoals } from "@/repositories/matchRepository";
-import { getPlayerById, updatePlayerLevel } from "@/repositories/playerRepository";
+import {
+  getPlayerById,
+  incrementPlayerCoins,
+  updatePlayerLevel,
+} from "@/repositories/playerRepository";
 import {
   AttemptColumnName,
   GoalColumnName,
@@ -81,8 +85,18 @@ const GOAL_PROBABILITY_BY_ACTION: Record<GoalActionType, number> = {
   trail: env.GOAL_PROBABILITY_TRAIL,
 };
 
+const COIN_REWARD_BY_ACTION: Partial<Record<GoalActionType, number>> = {
+  penalty: 10,
+  free_kick: 15,
+  trail: 25,
+};
+
 function rollGoalScoringChance(actionType: GoalActionType) {
   return Math.random() < GOAL_PROBABILITY_BY_ACTION[actionType];
+}
+
+function resolveCoinReward(actionType: GoalActionType): number {
+  return COIN_REWARD_BY_ACTION[actionType] ?? 0;
 }
 
 export async function attemptGoalAction({
@@ -202,6 +216,20 @@ export async function attemptGoalAction({
           matchId,
           scoringSide,
         });
+
+        const coinReward = resolveCoinReward(actionType);
+
+        if (coinReward > 0) {
+          const updatedPlayerCoins = await incrementPlayerCoins({
+            db: transaction,
+            playerId,
+            amount: coinReward,
+          });
+
+          if (!updatedPlayerCoins) {
+            throw new Error("Unable to reward player coins for goal.");
+          }
+        }
       }
 
       const playerTotalStats = await getPlayerTotalStats({ db: transaction, playerId });

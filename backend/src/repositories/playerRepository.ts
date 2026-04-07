@@ -138,6 +138,12 @@ interface DecrementPlayerCoinsProps {
   amount: number;
 }
 
+interface IncrementPlayerCoinsProps {
+  db: Transaction;
+  playerId: string;
+  amount: number;
+}
+
 export async function decrementPlayerCoins({
   db,
   playerId,
@@ -149,6 +155,24 @@ export async function decrementPlayerCoins({
     where ${players.id} = ${playerId}
       and ${players.deletedAt} is null
       and ${players.coins} >= ${amount}
+    returning
+      ${players.id} as "id",
+      ${players.coins} as "coins"
+  `);
+
+  return (result.rows[0] as PlayerCoinsRow | undefined) ?? null;
+}
+
+export async function incrementPlayerCoins({
+  db,
+  playerId,
+  amount,
+}: IncrementPlayerCoinsProps): Promise<PlayerCoinsRow | null> {
+  const result = await db.execute(sql`
+    update ${players}
+    set ${players.coins} = ${players.coins} + ${amount}
+    where ${players.id} = ${playerId}
+      and ${players.deletedAt} is null
     returning
       ${players.id} as "id",
       ${players.coins} as "coins"
