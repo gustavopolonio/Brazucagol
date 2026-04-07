@@ -8,6 +8,7 @@ import { getLoggedPlayerInventory } from "@/services/playerInventory";
 import {
   getLoggedPlayerLatestNotifications,
   getLoggedPlayerUnreadNotificationsCount,
+  markLoggedPlayerNotificationAsRead,
 } from "@/services/playerNotifications";
 import { getLoggedPlayerPurchaseHistory } from "@/services/playerPurchaseHistory";
 import { useTransferPassToJoinClub } from "@/services/playerTransfer";
@@ -436,6 +437,35 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
       return reply.status(200).send({ player: updatedPlayer });
     } catch (error) {
       request.log.error(error, "Failed to update player");
+      throw new Error(error);
+    }
+  });
+
+  fastify.patch("/players/notifications/:notificationId/read", async (request, reply) => {
+    const paramsSchema = z.object({
+      notificationId: z.uuid(),
+    });
+
+    const { notificationId } = paramsSchema.parse(request.params);
+    const session = request.authSession!;
+
+    try {
+      const notification = await markLoggedPlayerNotificationAsRead({
+        userId: session.user.id,
+        notificationId,
+      });
+
+      return reply.status(200).send(notification);
+    } catch (error) {
+      request.log.error(error, "Failed to mark player notification as read");
+
+      if (
+        error instanceof Error &&
+        (error.message === "Player not found." || error.message === "Notification not found.")
+      ) {
+        return reply.status(404).send({ error: error.message });
+      }
+
       throw new Error(error);
     }
   });

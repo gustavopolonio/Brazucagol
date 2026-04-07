@@ -1,4 +1,4 @@
-import { getLatestNotifications, getUnreadCount } from "@/services/notification";
+import { getLatestNotifications, getUnreadCount, markAsRead } from "@/services/notification";
 import { getPlayerIdByUserId } from "@/repositories/playerRepository";
 import { db } from "@/lib/drizzle";
 
@@ -9,6 +9,11 @@ export interface GetLoggedPlayerLatestNotificationsParams {
 
 export interface GetLoggedPlayerUnreadNotificationsCountParams {
   userId: string;
+}
+
+export interface MarkLoggedPlayerNotificationAsReadParams {
+  userId: string;
+  notificationId: string;
 }
 
 export async function getLoggedPlayerLatestNotifications({
@@ -52,5 +57,28 @@ export async function getLoggedPlayerUnreadNotificationsCount({
 
   return {
     unreadCount,
+  };
+}
+
+export async function markLoggedPlayerNotificationAsRead({
+  userId,
+  notificationId,
+}: MarkLoggedPlayerNotificationAsReadParams) {
+  const player = await getPlayerIdByUserId({
+    db,
+    userId,
+  });
+
+  if (!player) {
+    throw new Error("Player not found.");
+  }
+
+  const notification = await markAsRead({
+    playerId: player.id,
+    notificationId,
+  });
+
+  return {
+    notification,
   };
 }

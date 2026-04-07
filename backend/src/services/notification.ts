@@ -2,7 +2,7 @@ import { type NotificationType } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import {
   createPlayerNotification,
-  getPlayerNotificationById,
+  getPlayerNotificationByIdForPlayer,
   getPlayerUnreadNotificationCount,
   listPlayerLatestNotifications,
   markAllPlayerNotificationsAsRead,
@@ -22,6 +22,7 @@ export interface CreateNotificationParams {
 }
 
 export interface MarkAsReadParams {
+  playerId: string;
   notificationId: string;
 }
 
@@ -152,11 +153,13 @@ export async function createAndDeliverNotification({
 }
 
 export async function markAsRead({
+  playerId,
   notificationId,
 }: MarkAsReadParams): Promise<PlayerNotificationRow> {
   const currentDate = new Date();
   const updatedNotification = await markPlayerNotificationAsRead({
     db,
+    playerId,
     notificationId,
     readAt: currentDate,
   });
@@ -165,8 +168,9 @@ export async function markAsRead({
     return updatedNotification;
   }
 
-  const existingNotification = await getPlayerNotificationById({
+  const existingNotification = await getPlayerNotificationByIdForPlayer({
     db,
+    playerId,
     notificationId,
   });
 

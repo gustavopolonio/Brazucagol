@@ -66,21 +66,58 @@ export async function getPlayerNotificationById({
   return rows[0] ?? null;
 }
 
+interface GetPlayerNotificationByIdForPlayerProps {
+  db: Transaction | DbClient;
+  playerId: string;
+  notificationId: string;
+}
+
+export async function getPlayerNotificationByIdForPlayer({
+  db,
+  playerId,
+  notificationId,
+}: GetPlayerNotificationByIdForPlayerProps): Promise<PlayerNotificationRow | null> {
+  const rows = await db
+    .select({
+      id: playerNotifications.id,
+      playerId: playerNotifications.playerId,
+      type: playerNotifications.type,
+      payload: playerNotifications.payload,
+      readAt: playerNotifications.readAt,
+      createdAt: playerNotifications.createdAt,
+    })
+    .from(playerNotifications)
+    .where(
+      and(eq(playerNotifications.id, notificationId), eq(playerNotifications.playerId, playerId))
+    )
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
 interface MarkPlayerNotificationAsReadProps {
   db: Transaction | DbClient;
+  playerId: string;
   notificationId: string;
   readAt: Date;
 }
 
 export async function markPlayerNotificationAsRead({
   db,
+  playerId,
   notificationId,
   readAt,
 }: MarkPlayerNotificationAsReadProps): Promise<PlayerNotificationRow | null> {
   const rows = await db
     .update(playerNotifications)
     .set({ readAt })
-    .where(and(eq(playerNotifications.id, notificationId), isNull(playerNotifications.readAt)))
+    .where(
+      and(
+        eq(playerNotifications.id, notificationId),
+        eq(playerNotifications.playerId, playerId),
+        isNull(playerNotifications.readAt)
+      )
+    )
     .returning({
       id: playerNotifications.id,
       playerId: playerNotifications.playerId,
