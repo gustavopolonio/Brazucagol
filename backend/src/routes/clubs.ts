@@ -8,6 +8,7 @@ import { getClubInventory } from "@/services/clubInventory";
 import { getClubItemTransferHistory } from "@/services/clubItemTransferHistory";
 import { getClubPurchaseHistory } from "@/services/clubPurchaseHistory";
 import { giveClubItem } from "@/services/clubItemGive";
+import { assignClubRoleForUser } from "@/services/clubRoleManagement";
 import { buyClubStoreItemWithCoins } from "@/services/clubStorePurchase";
 
 export const publicClubsRoutes = async (fastify: FastifyInstance) => {
@@ -297,6 +298,58 @@ export const protectedClubsRoutes = async (fastify: FastifyInstance) => {
           error.message === "Target player does not belong to this club." ||
           error.message === "Club does not have enough item quantity." ||
           error.message === "Unable to update club item quantity."
+        ) {
+          return reply.status(400).send({ error: error.message });
+        }
+      }
+
+      throw new Error(error);
+    }
+  });
+
+  fastify.post("/clubs/:clubId/roles/assign", async (request, reply) => {
+    const assignClubRoleParamsSchema = z.object({
+      clubId: z.uuid(),
+    });
+
+    const assignClubRoleBodySchema = z.object({
+      targetPlayerId: z.uuid(),
+      roleToAssign: z.enum(["vice_president", "director", "captain"]),
+    });
+
+    const { clubId } = assignClubRoleParamsSchema.parse(request.params);
+    const { targetPlayerId, roleToAssign } = assignClubRoleBodySchema.parse(request.body);
+    const session = request.authSession!;
+
+    try {
+      const roleChange = await assignClubRoleForUser({
+        userId: session.user.id,
+        clubId,
+        targetPlayerId,
+        roleToAssign,
+      });
+
+      return reply.status(200).send(roleChange);
+    } catch (error) {
+      request.log.error(error, "Failed to assign club role");
+
+      if (error instanceof Error) {
+        if (
+          error.message === "Actor player not found." ||
+          error.message === "Actor does not have permission to assign this role." ||
+          error.message === "Actor player does not belong to this club."
+        ) {
+          return reply.status(403).send({ error: error.message });
+        }
+
+        if (
+          error.message === "Target player does not belong to this club." ||
+          error.message === "Cannot assign or replace the president role." ||
+          error.message === "Target player already has this role." ||
+          error.message === "Role limit reached for vice_president." ||
+          error.message === "Role limit reached for director." ||
+          error.message === "Role limit reached for captain." ||
+          error.message === "Failed to assign role to target player."
         ) {
           return reply.status(400).send({ error: error.message });
         }
