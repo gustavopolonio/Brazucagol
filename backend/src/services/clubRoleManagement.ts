@@ -64,3 +64,25 @@ export async function removeClubRoleForUser({
     clubId,
   });
 }
+
+export interface RemoveOwnClubRoleForUserParams {
+  userId: string;
+  clubId: string;
+}
+
+export async function removeOwnClubRoleForUser({ userId, clubId }: RemoveOwnClubRoleForUserParams) {
+  const actorPlayer = await getPlayerIdByUserId({
+    db,
+    userId,
+  });
+
+  if (!actorPlayer) {
+    throw new Error("Actor player not found.");
+  }
+
+  return removeRole({
+    actorPlayerId: actorPlayer.id,
+    targetPlayerId: actorPlayer.id,
+    clubId,
+  });
+}
