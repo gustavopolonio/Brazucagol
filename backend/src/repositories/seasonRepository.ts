@@ -1,4 +1,4 @@
-import { and, eq, gte, isNotNull, lt, ne, or, sql } from "drizzle-orm";
+import { and, asc, eq, gte, isNotNull, lte, lt, ne, or, sql } from "drizzle-orm";
 import {
   competitions,
   cupRounds,
@@ -34,6 +34,21 @@ export async function getSeasonById({
   const rows = await db.select({ id: seasons.id }).from(seasons).where(eq(seasons.id, seasonId));
 
   return rows[0] ?? null;
+}
+
+interface ListEndedSeasonsProps {
+  db: Transaction | DbClient;
+  now: Date;
+}
+
+export async function listEndedSeasons({ db, now }: ListEndedSeasonsProps): Promise<SeasonIdRow[]> {
+  return db
+    .select({
+      id: seasons.id,
+    })
+    .from(seasons)
+    .where(and(isNotNull(seasons.endsAt), lte(seasons.endsAt, now)))
+    .orderBy(asc(seasons.endsAt));
 }
 
 interface GetSeasonStartsAtByIdProps {

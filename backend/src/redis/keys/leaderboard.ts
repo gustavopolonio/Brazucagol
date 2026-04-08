@@ -28,3 +28,7 @@ export function buildHourLeaderboardRewardProcessedKey(hourKey: string) {
 export function buildRoundLeaderboardRewardProcessedKey(roundId: string) {
   return `leaderboard_reward:v1:round_processed:${roundId}`;
 }
+
+export function buildSeasonLeaderboardRewardProcessedKey(seasonId: string) {
+  return `leaderboard_reward:v1:season_processed:${seasonId}`;
+}
