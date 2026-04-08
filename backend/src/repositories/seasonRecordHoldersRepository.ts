@@ -1,7 +1,12 @@
 import { seasonRecordHolders } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { Transaction } from "@/lib/drizzle";
 
 type DbClient = (typeof import("@/lib/drizzle"))["db"];
+
+export type SeasonRecordHolderPlayerRow = {
+  playerId: string;
+};
 
 interface AddRecordHolderProps {
   db: Transaction | DbClient;
@@ -47,4 +52,21 @@ export async function addManyRecordHolders({
   await insert.onConflictDoNothing({
     target: [seasonRecordHolders.seasonRecordId, seasonRecordHolders.playerId],
   });
+}
+
+interface ListSeasonRecordHoldersByRecordIdProps {
+  db: Transaction | DbClient;
+  recordId: string;
+}
+
+export async function listSeasonRecordHoldersByRecordId({
+  db,
+  recordId,
+}: ListSeasonRecordHoldersByRecordIdProps): Promise<SeasonRecordHolderPlayerRow[]> {
+  return db
+    .select({
+      playerId: seasonRecordHolders.playerId,
+    })
+    .from(seasonRecordHolders)
+    .where(eq(seasonRecordHolders.seasonRecordId, recordId));
 }

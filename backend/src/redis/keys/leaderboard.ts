@@ -32,3 +32,7 @@ export function buildRoundLeaderboardRewardProcessedKey(roundId: string) {
 export function buildSeasonLeaderboardRewardProcessedKey(seasonId: string) {
   return `leaderboard_reward:v1:season_processed:${seasonId}`;
 }
+
+export function buildSeasonRecordRewardProcessedKey(seasonId: string, type: string) {
+  return `season_record_reward:v1:processed:${seasonId}:${type}`;
+}
