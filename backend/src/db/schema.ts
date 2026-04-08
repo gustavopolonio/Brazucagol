@@ -630,28 +630,34 @@ export const playerNotifications = pgTable(
   ]
 );
 
-export const playerRoundStats = pgTable("player_round_stats", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  playerId: uuid("player_id")
-    .notNull()
-    .references(() => players.id, { onDelete: "cascade" }),
-  matchId: uuid("match_id")
-    .notNull()
-    .references(() => matches.id, { onDelete: "cascade" }),
-  autoGoal: integer("auto_goal").default(0).notNull(),
-  autoGoalAttempts: integer("auto_goal_attempts").default(0).notNull(),
-  penaltyGoal: integer("penalty_goal").default(0).notNull(),
-  penaltyAttempts: integer("penalty_attempts").default(0).notNull(),
-  freeKickGoal: integer("free_kick_goal").default(0).notNull(),
-  freeKickAttempts: integer("free_kick_attempts").default(0).notNull(),
-  trailGoal: integer("trail_goal").default(0).notNull(),
-  trailAttempts: integer("trail_attempts").default(0).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
+export const playerRoundStats = pgTable(
+  "player_round_stats",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    playerId: uuid("player_id")
+      .notNull()
+      .references(() => players.id, { onDelete: "cascade" }),
+    matchId: uuid("match_id")
+      .notNull()
+      .references(() => matches.id, { onDelete: "cascade" }),
+    autoGoal: integer("auto_goal").default(0).notNull(),
+    autoGoalAttempts: integer("auto_goal_attempts").default(0).notNull(),
+    penaltyGoal: integer("penalty_goal").default(0).notNull(),
+    penaltyAttempts: integer("penalty_attempts").default(0).notNull(),
+    freeKickGoal: integer("free_kick_goal").default(0).notNull(),
+    freeKickAttempts: integer("free_kick_attempts").default(0).notNull(),
+    trailGoal: integer("trail_goal").default(0).notNull(),
+    trailAttempts: integer("trail_attempts").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("player_round_stats_player_match_unique").on(table.playerId, table.matchId),
+  ]
+);
 
 export const playerTotalStats = pgTable("player_total_stats", {
   id: uuid("id").defaultRandom().primaryKey(),

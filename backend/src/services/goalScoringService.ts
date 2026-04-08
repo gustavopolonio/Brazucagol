@@ -14,8 +14,7 @@ import {
 import {
   AttemptColumnName,
   GoalColumnName,
-  createPlayerRoundStats,
-  getPlayerRoundStatsForUpdate,
+  ensurePlayerRoundStatsExists,
   incrementPlayerRoundStatsColumns,
 } from "@/repositories/playerRoundStatsRepository";
 import { getPlayerTotalStats } from "@/repositories/playerTotalStatsRepository";
@@ -180,15 +179,11 @@ export async function attemptGoalAction({
 
       cooldownToken = cooldownResult.token;
 
-      const existingPlayerRoundStats = await getPlayerRoundStatsForUpdate({
+      await ensurePlayerRoundStatsExists({
         db: transaction,
         playerId,
         matchId,
       });
-
-      if (!existingPlayerRoundStats) {
-        await createPlayerRoundStats({ db: transaction, playerId, matchId });
-      }
 
       const { goalColumnName, attemptColumnName } = getPlayerRoundStatsColumns(actionType);
 

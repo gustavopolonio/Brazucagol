@@ -7,8 +7,7 @@ import {
   incrementMatchGoals,
 } from "@/repositories/matchRepository";
 import {
-  createPlayerRoundStats,
-  getPlayerRoundStatsForUpdate,
+  ensurePlayerRoundStatsExists,
   incrementPlayerRoundStatsColumns,
 } from "@/repositories/playerRoundStatsRepository";
 import { getPlayerById } from "@/repositories/playerRepository";
@@ -90,15 +89,11 @@ async function processAutoGoalForPlayer(playerId: string, now: number): Promise<
         return { status: "clear_presence" };
       }
 
-      const existingPlayerRoundStats = await getPlayerRoundStatsForUpdate({
+      await ensurePlayerRoundStatsExists({
         db: transaction,
         playerId,
         matchId: match.id,
       });
-
-      if (!existingPlayerRoundStats) {
-        await createPlayerRoundStats({ db: transaction, playerId, matchId: match.id });
-      }
 
       const updatedPlayerRoundStats = await incrementPlayerRoundStatsColumns({
         db: transaction,

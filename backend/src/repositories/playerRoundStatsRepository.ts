@@ -93,6 +93,27 @@ export async function createPlayerRoundStats({
   return rows[0];
 }
 
+interface EnsurePlayerRoundStatsExistsProps {
+  db: Transaction;
+  playerId: string;
+  matchId: string;
+}
+
+export async function ensurePlayerRoundStatsExists({
+  db,
+  playerId,
+  matchId,
+}: EnsurePlayerRoundStatsExistsProps): Promise<void> {
+  const insert = db.insert(playerRoundStats).values({
+    playerId,
+    matchId,
+  });
+
+  await insert.onConflictDoNothing({
+    target: [playerRoundStats.playerId, playerRoundStats.matchId],
+  });
+}
+
 interface IncrementPlayerRoundStatsColumnsProps {
   db: Transaction;
   playerId: string;
@@ -130,7 +151,13 @@ export async function incrementPlayerRoundStatsColumns({
       trailAttempts: playerRoundStats.trailAttempts,
     });
 
-  return rows[0];
+  const updatedPlayerRoundStats = rows[0];
+
+  if (!updatedPlayerRoundStats) {
+    throw new Error(`Player round stats not found for player ${playerId} and match ${matchId}.`);
+  }
+
+  return updatedPlayerRoundStats;
 }
 
 interface HasPenaltyAttemptSinceProps {
