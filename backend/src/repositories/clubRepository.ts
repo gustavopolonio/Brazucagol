@@ -103,7 +103,7 @@ export async function decrementClubCoins({
 }: DecrementClubCoinsProps): Promise<ClubCoinsRow | null> {
   const result = await db.execute(sql`
     update ${clubs}
-    set ${clubs.coins} = ${clubs.coins} - ${amount}
+    set "coins" = ${clubs.coins} - ${amount}
     where ${clubs.id} = ${clubId}
       and ${clubs.deletedAt} is null
       and ${clubs.coins} >= ${amount}

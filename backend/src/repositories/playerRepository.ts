@@ -151,7 +151,7 @@ export async function decrementPlayerCoins({
 }: DecrementPlayerCoinsProps): Promise<PlayerCoinsRow | null> {
   const result = await db.execute(sql`
     update ${players}
-    set ${players.coins} = ${players.coins} - ${amount}
+    set "coins" = ${players.coins} - ${amount}
     where ${players.id} = ${playerId}
       and ${players.deletedAt} is null
       and ${players.coins} >= ${amount}
@@ -170,7 +170,7 @@ export async function incrementPlayerCoins({
 }: IncrementPlayerCoinsProps): Promise<PlayerCoinsRow | null> {
   const result = await db.execute(sql`
     update ${players}
-    set ${players.coins} = ${players.coins} + ${amount}
+    set "coins" = ${players.coins} + ${amount}
     where ${players.id} = ${playerId}
       and ${players.deletedAt} is null
     returning
