@@ -379,7 +379,8 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
           error.message === "Player already belongs to destination club." ||
           error.message === "Player does not have enough transfer pass items." ||
           error.message === "Unable to consume transfer pass item." ||
-          error.message === "Unable to leave current club."
+          error.message === "Unable to leave current club." ||
+          error.message === "Unable to resolve competing transfer proposal as denied."
         ) {
           return reply.status(400).send({ error: error.message });
         }
