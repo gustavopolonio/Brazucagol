@@ -155,6 +155,35 @@ interface GetClubTransferProposalByIdForUpdateProps {
   proposalId: string;
 }
 
+interface GetClubTransferProposalByIdProps {
+  db: Transaction | DbClient;
+  proposalId: string;
+}
+
+export async function getClubTransferProposalById({
+  db,
+  proposalId,
+}: GetClubTransferProposalByIdProps): Promise<ClubTransferProposalRow | null> {
+  const rows = await db
+    .select({
+      id: clubTransferProposals.id,
+      proposerClubId: clubTransferProposals.proposerClubId,
+      targetPlayerCurrentClubId: clubTransferProposals.targetPlayerCurrentClubId,
+      actorPlayerId: clubTransferProposals.actorPlayerId,
+      targetPlayerId: clubTransferProposals.targetPlayerId,
+      transferPassItemId: clubTransferProposals.transferPassItemId,
+      status: clubTransferProposals.status,
+      expiresAt: clubTransferProposals.expiresAt,
+      createdAt: clubTransferProposals.createdAt,
+      resolvedAt: clubTransferProposals.resolvedAt,
+    })
+    .from(clubTransferProposals)
+    .where(eq(clubTransferProposals.id, proposalId))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
 export async function getClubTransferProposalByIdForUpdate({
   db,
   proposalId,
@@ -178,6 +207,40 @@ export async function getClubTransferProposalByIdForUpdate({
   `);
 
   return (result.rows[0] as ClubTransferProposalRow | undefined) ?? null;
+}
+
+interface ListPendingClubTransferProposalsByTargetPlayerIdForUpdateProps {
+  db: Transaction;
+  targetPlayerId: string;
+}
+
+export async function listPendingClubTransferProposalsByTargetPlayerIdForUpdate({
+  db,
+  targetPlayerId,
+}: ListPendingClubTransferProposalsByTargetPlayerIdForUpdateProps): Promise<
+  ClubTransferProposalRow[]
+> {
+  const result = await db.execute(sql`
+    select
+      ${clubTransferProposals.id} as "id",
+      ${clubTransferProposals.proposerClubId} as "proposerClubId",
+      ${clubTransferProposals.targetPlayerCurrentClubId} as "targetPlayerCurrentClubId",
+      ${clubTransferProposals.actorPlayerId} as "actorPlayerId",
+      ${clubTransferProposals.targetPlayerId} as "targetPlayerId",
+      ${clubTransferProposals.transferPassItemId} as "transferPassItemId",
+      ${clubTransferProposals.status} as "status",
+      ${clubTransferProposals.expiresAt} as "expiresAt",
+      ${clubTransferProposals.createdAt} as "createdAt",
+      ${clubTransferProposals.resolvedAt} as "resolvedAt"
+    from ${clubTransferProposals}
+    where ${clubTransferProposals.targetPlayerId} = ${targetPlayerId}
+      and ${clubTransferProposals.status} = 'pending'
+      and ${clubTransferProposals.resolvedAt} is null
+    order by ${clubTransferProposals.createdAt} desc, ${clubTransferProposals.id} desc
+    for update
+  `);
+
+  return result.rows as ClubTransferProposalRow[];
 }
 
 interface ResolveClubTransferProposalProps {

@@ -7,7 +7,9 @@ import {
 } from "@/repositories/clubMembersRepository";
 import {
   createClubTransferProposal,
+  getClubTransferProposalById,
   getClubTransferProposalByIdForUpdate,
+  listPendingClubTransferProposalsByTargetPlayerIdForUpdate,
   resolveClubTransferProposal,
 } from "@/repositories/clubTransferProposalsRepository";
 import { insertPlayerItemUsageLog } from "@/repositories/itemUsageLogsRepository";
@@ -165,26 +167,22 @@ export async function acceptTransferProposal({
   proposalId,
   targetPlayerId,
 }: AcceptTransferProposalParams): Promise<ClubTransferResult> {
+  const existingProposal = await getClubTransferProposalById({
+    db,
+    proposalId,
+  });
+
+  if (!existingProposal) {
+    throw new Error("Transfer proposal not found.");
+  }
+
+  if (existingProposal.targetPlayerId !== targetPlayerId) {
+    throw new Error("Only proposal target player can accept this transfer.");
+  }
+
   const transactionResult = await db.transaction(async (transaction) => {
-    const proposal = await getClubTransferProposalByIdForUpdate({
-      db: transaction,
-      proposalId,
-    });
-
-    if (!proposal) {
-      throw new Error("Transfer proposal not found.");
-    }
-
-    if (proposal.targetPlayerId !== targetPlayerId) {
-      throw new Error("Only proposal target player can accept this transfer.");
-    }
-
-    if (proposal.status !== "pending" || proposal.resolvedAt !== null) {
-      throw new Error("Transfer proposal is already resolved.");
-    }
-
     const currentDate = new Date();
-    if (currentDate.getTime() > proposal.expiresAt.getTime()) {
+    if (currentDate.getTime() > existingProposal.expiresAt.getTime()) {
       throw new Error("Transfer proposal is expired.");
     }
 
@@ -195,15 +193,29 @@ export async function acceptTransferProposal({
 
     if (
       !targetClubMembership ||
-      targetClubMembership.clubId !== proposal.targetPlayerCurrentClubId
+      targetClubMembership.clubId !== existingProposal.targetPlayerCurrentClubId
     ) {
       throw new Error("Target player does not belong to original club anymore.");
+    }
+
+    const lockedPendingTargetProposals =
+      await listPendingClubTransferProposalsByTargetPlayerIdForUpdate({
+        db: transaction,
+        targetPlayerId,
+      });
+
+    const selectedProposal = lockedPendingTargetProposals.find(
+      (pendingProposal) => pendingProposal.id === proposalId
+    );
+
+    if (!selectedProposal) {
+      throw new Error("Transfer proposal is already resolved.");
     }
 
     const leftClubMembership = await markPlayerLeftClub({
       db: transaction,
       playerId: targetPlayerId,
-      clubId: proposal.targetPlayerCurrentClubId,
+      clubId: existingProposal.targetPlayerCurrentClubId,
       leftAt: currentDate,
     });
 
@@ -214,39 +226,76 @@ export async function acceptTransferProposal({
     await createClubMembership({
       db: transaction,
       playerId: targetPlayerId,
-      clubId: proposal.proposerClubId,
+      clubId: selectedProposal.proposerClubId,
       role: "player",
     });
 
-    const resolvedProposal = await resolveClubTransferProposal({
+    const acceptedProposal = await resolveClubTransferProposal({
       db: transaction,
       proposalId,
       status: "accepted",
       resolvedAt: currentDate,
     });
 
-    if (!resolvedProposal) {
+    if (!acceptedProposal) {
       throw new Error("Unable to resolve transfer proposal as accepted.");
     }
 
     await insertPlayerItemUsageLog({
       db: transaction,
-      itemId: proposal.transferPassItemId,
-      playerId: proposal.actorPlayerId,
+      itemId: selectedProposal.transferPassItemId,
+      playerId: selectedProposal.actorPlayerId,
       quantityUsed: 1,
       reason: TRANSFER_PROPOSAL_ACCEPTED_USAGE_REASON,
     });
 
+    const deniedCompetingProposals: Array<{
+      proposalId: string;
+      actorPlayerId: string;
+      transferPassItemId: string;
+    }> = [];
+
+    for (const competingProposal of lockedPendingTargetProposals) {
+      if (competingProposal.id === proposalId) {
+        continue;
+      }
+
+      await upsertPlayerItemQuantityIncrease({
+        db: transaction,
+        playerId: competingProposal.actorPlayerId,
+        itemId: competingProposal.transferPassItemId,
+        quantityToIncrease: 1,
+      });
+
+      const deniedProposal = await resolveClubTransferProposal({
+        db: transaction,
+        proposalId: competingProposal.id,
+        status: "denied",
+        resolvedAt: currentDate,
+      });
+
+      if (!deniedProposal) {
+        throw new Error("Unable to resolve competing transfer proposal as denied.");
+      }
+
+      deniedCompetingProposals.push({
+        proposalId: competingProposal.id,
+        actorPlayerId: competingProposal.actorPlayerId,
+        transferPassItemId: competingProposal.transferPassItemId,
+      });
+    }
+
     console.log(
-      `[club_transfer] accept_transfer_proposal proposalId=${proposalId} targetPlayerId=${targetPlayerId} proposerClubId=${proposal.proposerClubId} targetPlayerCurrentClubId=${proposal.targetPlayerCurrentClubId}`
+      `[club_transfer] accept_transfer_proposal proposalId=${proposalId} targetPlayerId=${targetPlayerId} proposerClubId=${selectedProposal.proposerClubId} targetPlayerCurrentClubId=${selectedProposal.targetPlayerCurrentClubId} deniedCompetingProposalsCount=${deniedCompetingProposals.length}`
     );
 
     return {
       proposalId,
-      actorPlayerId: proposal.actorPlayerId,
+      actorPlayerId: selectedProposal.actorPlayerId,
       targetPlayerId,
-      previousClubId: proposal.targetPlayerCurrentClubId,
-      newClubId: proposal.proposerClubId,
+      previousClubId: selectedProposal.targetPlayerCurrentClubId,
+      newClubId: selectedProposal.proposerClubId,
+      deniedCompetingProposals,
     };
   });
 
@@ -269,6 +318,32 @@ export async function acceptTransferProposal({
       newClubId: transactionResult.newClubId,
     },
   });
+
+  await Promise.all(
+    transactionResult.deniedCompetingProposals.flatMap((deniedProposal) => [
+      createAndDeliverNotification({
+        playerId: deniedProposal.actorPlayerId,
+        type: "transfer_pass_received",
+        payload: {
+          itemId: deniedProposal.transferPassItemId,
+          quantity: 1,
+          reason: "transfer_proposal_denied_other_accepted",
+          proposalId: deniedProposal.proposalId,
+          acceptedProposalId: transactionResult.proposalId,
+        },
+      }),
+      createAndDeliverNotification({
+        playerId: deniedProposal.actorPlayerId,
+        type: "transfer_proposal_denied",
+        payload: {
+          proposalId: deniedProposal.proposalId,
+          targetPlayerId: transactionResult.targetPlayerId,
+          reason: "another_proposal_accepted",
+          acceptedProposalId: transactionResult.proposalId,
+        },
+      }),
+    ])
+  );
 
   return {
     proposalId: transactionResult.proposalId,
