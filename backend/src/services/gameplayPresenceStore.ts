@@ -13,6 +13,40 @@ import {
 } from "@/redis/keys/gameplayPresence";
 
 const MANUAL_COOLDOWN_ACTIONS: GoalActionType[] = ["penalty", "free_kick", "trail"];
+const PRESENCE_CLEANUP_COOLDOWN_ACTIONS: GoalActionType[] = [
+  "auto",
+  "penalty",
+  "free_kick",
+  "trail",
+];
+
+const CLEANUP_OFFLINE_PRESENCE_SCRIPT = `
+local onlinePlayersKey = KEYS[1]
+local autoGoalScheduleKey = KEYS[2]
+local cutoffTimestamp = tonumber(ARGV[1])
+local actionTypesCount = tonumber(ARGV[2])
+local removedPlayerIds = {}
+
+local candidatePlayerIds = redis.call("zrangebyscore", onlinePlayersKey, 0, cutoffTimestamp)
+
+for _, playerId in ipairs(candidatePlayerIds) do
+  local lastSeenTimestamp = redis.call("zscore", onlinePlayersKey, playerId)
+
+  if lastSeenTimestamp and tonumber(lastSeenTimestamp) <= cutoffTimestamp then
+    redis.call("zrem", onlinePlayersKey, playerId)
+    redis.call("zrem", autoGoalScheduleKey, playerId)
+
+    for actionTypeIndex = 1, actionTypesCount do
+      local actionType = ARGV[2 + actionTypeIndex]
+      redis.call("del", "cooldown:v1:" .. actionType .. ":" .. playerId)
+    end
+
+    table.insert(removedPlayerIds, playerId)
+  end
+end
+
+return removedPlayerIds
+`;
 
 export async function startGameplayPresence(playerId: string): Promise<void> {
   const player = await getPlayerById({ db, playerId });
@@ -59,25 +93,27 @@ export async function clearGameplayPresence(playerId: string): Promise<void> {
     .exec();
 }
 
-export async function cleanupOfflinePresence(now: number) {
-  const offlinePlayers = await redisClient.zrangebyscore(
-    GAMEPLAY_ONLINE_PLAYERS_KEY,
-    0,
-    now - env.ONLINE_WINDOW_MS
-  );
+export async function cleanupOfflinePresenceAtomically(now: number): Promise<string[]> {
+  const cutoffTimestamp = now - env.ONLINE_WINDOW_MS;
 
-  if (offlinePlayers.length === 0) return;
+  try {
+    const removedPlayerIds = await redisClient.eval(
+      CLEANUP_OFFLINE_PRESENCE_SCRIPT,
+      2,
+      GAMEPLAY_ONLINE_PLAYERS_KEY,
+      AUTO_GOAL_SCHEDULE_KEY,
+      String(cutoffTimestamp),
+      String(PRESENCE_CLEANUP_COOLDOWN_ACTIONS.length),
+      ...PRESENCE_CLEANUP_COOLDOWN_ACTIONS
+    );
 
-  const cooldownKeys = offlinePlayers.flatMap((playerId) =>
-    MANUAL_COOLDOWN_ACTIONS.map((actionType) => buildCooldownKey({ playerId, actionType }))
-  );
-
-  await redisClient
-    .multi()
-    .zrem(GAMEPLAY_ONLINE_PLAYERS_KEY, ...offlinePlayers)
-    .zrem(AUTO_GOAL_SCHEDULE_KEY, ...offlinePlayers)
-    .del(...cooldownKeys)
-    .exec();
+    return Array.isArray(removedPlayerIds)
+      ? removedPlayerIds.filter((playerId): playerId is string => typeof playerId === "string")
+      : [];
+  } catch (error) {
+    console.error("Failed to cleanup offline presence atomically", error);
+    return [];
+  }
 }
 
 export async function isPlayerOffline(
