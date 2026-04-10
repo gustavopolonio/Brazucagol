@@ -16,3 +16,14 @@ export function assertStoreItemAllowsCoins(
 
   throw new Error(errorMessage);
 }
+
+export function assertStoreItemAllowsRealMoney(
+  pricingType: ItemPricingType,
+  errorMessage = "Store item cannot be purchased with real money."
+): void {
+  if (pricingType === "real_money_only" || pricingType === "coins_and_real_money") {
+    return;
+  }
+
+  throw new Error(errorMessage);
+}
