@@ -2,18 +2,27 @@ import { and, eq } from "drizzle-orm";
 import { storeItems, type StoreItem } from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
+type DbClient = (typeof import("@/lib/drizzle"))["db"];
+
 export type StoreItemEconomyRow = Pick<
   StoreItem,
-  "id" | "type" | "durationSeconds" | "pricingType" | "coinPriceCents"
+  | "id"
+  | "name"
+  | "type"
+  | "durationSeconds"
+  | "pricingType"
+  | "coinPriceCents"
+  | "realMoneyPriceCents"
+  | "isAvailableInStore"
 >;
 
 interface GetStoreItemByIdProps {
-  db: Transaction;
+  db: Transaction | DbClient;
   storeItemId: string;
 }
 
 interface GetStoreItemByTypeAndDurationSecondsProps {
-  db: Transaction;
+  db: Transaction | DbClient;
   itemType: StoreItem["type"];
   durationSeconds: number;
 }
@@ -25,10 +34,13 @@ export async function getStoreItemById({
   const rows = await db
     .select({
       id: storeItems.id,
+      name: storeItems.name,
       type: storeItems.type,
       durationSeconds: storeItems.durationSeconds,
       pricingType: storeItems.pricingType,
       coinPriceCents: storeItems.coinPriceCents,
+      realMoneyPriceCents: storeItems.realMoneyPriceCents,
+      isAvailableInStore: storeItems.isAvailableInStore,
     })
     .from(storeItems)
     .where(eq(storeItems.id, storeItemId))
@@ -45,10 +57,13 @@ export async function getStoreItemByTypeAndDurationSeconds({
   const rows = await db
     .select({
       id: storeItems.id,
+      name: storeItems.name,
       type: storeItems.type,
       durationSeconds: storeItems.durationSeconds,
       pricingType: storeItems.pricingType,
       coinPriceCents: storeItems.coinPriceCents,
+      realMoneyPriceCents: storeItems.realMoneyPriceCents,
+      isAvailableInStore: storeItems.isAvailableInStore,
     })
     .from(storeItems)
     .where(and(eq(storeItems.type, itemType), eq(storeItems.durationSeconds, durationSeconds)))
