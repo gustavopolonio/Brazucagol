@@ -118,3 +118,28 @@ export async function insertPlayerItemPurchaseLogWithCoins({
     quantity,
   });
 }
+
+interface InsertPlayerItemPurchaseLogWithRealMoneyProps {
+  db: Transaction;
+  playerId: string;
+  itemId: string;
+  unitPrice: number;
+  quantity: number;
+}
+
+export async function insertPlayerItemPurchaseLogWithRealMoney({
+  db,
+  playerId,
+  itemId,
+  unitPrice,
+  quantity,
+}: InsertPlayerItemPurchaseLogWithRealMoneyProps): Promise<void> {
+  await db.insert(itemPurchaseLogs).values({
+    itemId,
+    clubId: null,
+    playerId,
+    paymentMethod: "real_money",
+    unitPrice,
+    quantity,
+  });
+}
