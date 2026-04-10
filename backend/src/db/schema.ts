@@ -34,6 +34,14 @@ export const itemPricingTypeEnum = pgEnum("item_pricing_type", [
   "coins_and_real_money",
 ]);
 export const paymentMethodEnum = pgEnum("payment_method", ["coins", "real_money"]);
+export const paymentProviderEnum = pgEnum("payment_provider", ["infinitepay"]);
+export const paymentOrderStatusEnum = pgEnum("payment_order_status", [
+  "pending",
+  "checkout_created",
+  "paid",
+  "failed",
+]);
+export const captureMethodEnum = pgEnum("capture_method", ["credit_card", "pix"]);
 export const clubTransferProposalStatusEnum = pgEnum("club_transfer_proposal_status", [
   "pending",
   "accepted",
@@ -415,6 +423,54 @@ export const itemPurchaseLogs = pgTable(
   ]
 );
 
+export const paymentOrders = pgTable(
+  "payment_orders",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    playerId: uuid("player_id")
+      .notNull()
+      .references(() => players.id, { onDelete: "cascade" }),
+    storeItemId: uuid("store_item_id")
+      .notNull()
+      .references(() => storeItems.id, { onDelete: "cascade" }),
+    provider: paymentProviderEnum("provider").default("infinitepay").notNull(),
+    status: paymentOrderStatusEnum("status").default("pending").notNull(),
+    buyerEmail: varchar("buyer_email", { length: 255 }).notNull(),
+    quantity: integer("quantity").notNull(),
+    unitPriceCents: integer("unit_price_cents").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    orderNsu: varchar("order_nsu", { length: 255 }).notNull(),
+    checkoutUrl: text("checkout_url"),
+    redirectUrl: text("redirect_url"),
+    webhookUrl: text("webhook_url"),
+    invoiceSlug: varchar("invoice_slug", { length: 255 }),
+    transactionNsu: varchar("transaction_nsu", { length: 255 }),
+    captureMethod: captureMethodEnum("capture_method"),
+    paidAmountCents: integer("paid_amount_cents"),
+    receiptUrl: text("receipt_url"),
+    providerPayload: jsonb("provider_payload").$type<Record<string, unknown>>(),
+    checkoutRequestedAt: timestamp("checkout_requested_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("payment_orders_order_nsu_unique").on(table.orderNsu),
+    uniqueIndex("payment_orders_invoice_slug_unique").on(table.invoiceSlug),
+    uniqueIndex("payment_orders_transaction_nsu_unique").on(table.transactionNsu),
+    index("payment_orders_player_id_idx").on(table.playerId),
+    index("payment_orders_status_idx").on(table.status),
+    check("payment_orders_quantity_positive_check", sql`${table.quantity} > 0`),
+    check("payment_orders_unit_price_positive_check", sql`${table.unitPriceCents} > 0`),
+    check("payment_orders_amount_positive_check", sql`${table.amountCents} > 0`),
+  ]
+);
+
 export const itemUsageLogs = pgTable(
   "item_usage_logs",
   {
@@ -703,6 +759,9 @@ export type SeasonRecordType = (typeof seasonRecordTypeEnum.enumValues)[number];
 export type ItemType = (typeof itemTypeEnum.enumValues)[number];
 export type ItemPricingType = (typeof itemPricingTypeEnum.enumValues)[number];
 export type PaymentMethod = (typeof paymentMethodEnum.enumValues)[number];
+export type PaymentProvider = (typeof paymentProviderEnum.enumValues)[number];
+export type PaymentOrderStatus = (typeof paymentOrderStatusEnum.enumValues)[number];
+export type CaptureMethod = (typeof captureMethodEnum.enumValues)[number];
 export type ClubTransferProposalStatus = (typeof clubTransferProposalStatusEnum.enumValues)[number];
 export type NotificationType = (typeof notificationTypeEnum.enumValues)[number];
 export type SeasonRecordHolder = typeof seasonRecordHolders.$inferSelect;
@@ -727,6 +786,8 @@ export type ClubItem = typeof clubItems.$inferSelect;
 export type NewClubItem = typeof clubItems.$inferInsert;
 export type ItemPurchaseLog = typeof itemPurchaseLogs.$inferSelect;
 export type NewItemPurchaseLog = typeof itemPurchaseLogs.$inferInsert;
+export type PaymentOrder = typeof paymentOrders.$inferSelect;
+export type NewPaymentOrder = typeof paymentOrders.$inferInsert;
 export type ItemUsageLog = typeof itemUsageLogs.$inferSelect;
 export type NewItemUsageLog = typeof itemUsageLogs.$inferInsert;
 export type ItemTransferLog = typeof itemTransferLogs.$inferSelect;
@@ -765,6 +826,7 @@ export const schema = {
   playerItems,
   clubItems,
   itemPurchaseLogs,
+  paymentOrders,
   itemUsageLogs,
   itemTransferLogs,
   clubTransferProposals,
