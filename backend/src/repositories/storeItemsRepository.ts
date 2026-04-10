@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { storeItems, type StoreItem } from "@/db/schema";
 import { Transaction } from "@/lib/drizzle";
 
@@ -25,6 +25,11 @@ interface GetStoreItemByTypeAndDurationSecondsProps {
   db: Transaction | DbClient;
   itemType: StoreItem["type"];
   durationSeconds: number;
+}
+
+interface ListStoreItemsByIdsProps {
+  db: Transaction | DbClient;
+  storeItemIds: string[];
 }
 
 export async function getStoreItemById({
@@ -70,4 +75,27 @@ export async function getStoreItemByTypeAndDurationSeconds({
     .limit(1);
 
   return rows[0] ?? null;
+}
+
+export async function listStoreItemsByIds({
+  db,
+  storeItemIds,
+}: ListStoreItemsByIdsProps): Promise<StoreItemEconomyRow[]> {
+  if (storeItemIds.length === 0) {
+    return [];
+  }
+
+  return db
+    .select({
+      id: storeItems.id,
+      name: storeItems.name,
+      type: storeItems.type,
+      durationSeconds: storeItems.durationSeconds,
+      pricingType: storeItems.pricingType,
+      coinPriceCents: storeItems.coinPriceCents,
+      realMoneyPriceCents: storeItems.realMoneyPriceCents,
+      isAvailableInStore: storeItems.isAvailableInStore,
+    })
+    .from(storeItems)
+    .where(inArray(storeItems.id, storeItemIds));
 }
