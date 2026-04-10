@@ -430,14 +430,9 @@ export const paymentOrders = pgTable(
     playerId: uuid("player_id")
       .notNull()
       .references(() => players.id, { onDelete: "cascade" }),
-    storeItemId: uuid("store_item_id")
-      .notNull()
-      .references(() => storeItems.id, { onDelete: "cascade" }),
     provider: paymentProviderEnum("provider").default("infinitepay").notNull(),
     status: paymentOrderStatusEnum("status").default("pending").notNull(),
     buyerEmail: varchar("buyer_email", { length: 255 }).notNull(),
-    quantity: integer("quantity").notNull(),
-    unitPriceCents: integer("unit_price_cents").notNull(),
     amountCents: integer("amount_cents").notNull(),
     orderNsu: varchar("order_nsu", { length: 255 }).notNull(),
     checkoutUrl: text("checkout_url"),
@@ -465,9 +460,34 @@ export const paymentOrders = pgTable(
     uniqueIndex("payment_orders_transaction_nsu_unique").on(table.transactionNsu),
     index("payment_orders_player_id_idx").on(table.playerId),
     index("payment_orders_status_idx").on(table.status),
-    check("payment_orders_quantity_positive_check", sql`${table.quantity} > 0`),
-    check("payment_orders_unit_price_positive_check", sql`${table.unitPriceCents} > 0`),
     check("payment_orders_amount_positive_check", sql`${table.amountCents} > 0`),
+  ]
+);
+
+export const paymentOrderItems = pgTable(
+  "payment_order_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    paymentOrderId: uuid("payment_order_id")
+      .notNull()
+      .references(() => paymentOrders.id, { onDelete: "cascade" }),
+    storeItemId: uuid("store_item_id")
+      .notNull()
+      .references(() => storeItems.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").notNull(),
+    unitPriceCents: integer("unit_price_cents").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("payment_order_items_order_item_unique").on(
+      table.paymentOrderId,
+      table.storeItemId
+    ),
+    index("payment_order_items_order_id_idx").on(table.paymentOrderId),
+    check("payment_order_items_quantity_positive_check", sql`${table.quantity} > 0`),
+    check("payment_order_items_unit_price_positive_check", sql`${table.unitPriceCents} > 0`),
+    check("payment_order_items_amount_positive_check", sql`${table.amountCents} > 0`),
   ]
 );
 
@@ -788,6 +808,8 @@ export type ItemPurchaseLog = typeof itemPurchaseLogs.$inferSelect;
 export type NewItemPurchaseLog = typeof itemPurchaseLogs.$inferInsert;
 export type PaymentOrder = typeof paymentOrders.$inferSelect;
 export type NewPaymentOrder = typeof paymentOrders.$inferInsert;
+export type PaymentOrderItem = typeof paymentOrderItems.$inferSelect;
+export type NewPaymentOrderItem = typeof paymentOrderItems.$inferInsert;
 export type ItemUsageLog = typeof itemUsageLogs.$inferSelect;
 export type NewItemUsageLog = typeof itemUsageLogs.$inferInsert;
 export type ItemTransferLog = typeof itemTransferLogs.$inferSelect;
@@ -827,6 +849,7 @@ export const schema = {
   clubItems,
   itemPurchaseLogs,
   paymentOrders,
+  paymentOrderItems,
   itemUsageLogs,
   itemTransferLogs,
   clubTransferProposals,
