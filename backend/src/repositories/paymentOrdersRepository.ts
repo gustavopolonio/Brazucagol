@@ -13,11 +13,8 @@ export type PaymentOrderRow = Pick<
   PaymentOrder,
   | "id"
   | "playerId"
-  | "storeItemId"
   | "status"
   | "buyerEmail"
-  | "quantity"
-  | "unitPriceCents"
   | "amountCents"
   | "orderNsu"
   | "checkoutUrl"
@@ -39,10 +36,7 @@ interface CreatePaymentOrderProps {
   db: Transaction;
   id: string;
   playerId: string;
-  storeItemId: string;
   buyerEmail: string;
-  quantity: number;
-  unitPriceCents: number;
   amountCents: number;
   orderNsu: string;
   redirectUrl: string;
@@ -53,10 +47,7 @@ export async function createPaymentOrder({
   db,
   id,
   playerId,
-  storeItemId,
   buyerEmail,
-  quantity,
-  unitPriceCents,
   amountCents,
   orderNsu,
   redirectUrl,
@@ -67,10 +58,7 @@ export async function createPaymentOrder({
     .values({
       id,
       playerId,
-      storeItemId,
       buyerEmail,
-      quantity,
-      unitPriceCents,
       amountCents,
       orderNsu,
       redirectUrl,
@@ -112,11 +100,8 @@ export async function getPaymentOrderByOrderNsuForUpdate({
     select
       ${paymentOrders.id} as "id",
       ${paymentOrders.playerId} as "playerId",
-      ${paymentOrders.storeItemId} as "storeItemId",
       ${paymentOrders.status} as "status",
       ${paymentOrders.buyerEmail} as "buyerEmail",
-      ${paymentOrders.quantity} as "quantity",
-      ${paymentOrders.unitPriceCents} as "unitPriceCents",
       ${paymentOrders.amountCents} as "amountCents",
       ${paymentOrders.orderNsu} as "orderNsu",
       ${paymentOrders.checkoutUrl} as "checkoutUrl",
