@@ -22,6 +22,12 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
 
+  // Payments
+  INFINITEPAY_HANDLE: z.string().trim().min(1),
+  INFINITEPAY_CHECKOUT_WEBHOOK_URL: z.url(),
+  INFINITEPAY_CHECKOUT_REDIRECT_URL: z.url(),
+  INFINITEPAY_API_BASE_URL: z.url().default("https://api.infinitepay.io"),
+
   // Cooldowns
   COOLDOWN_STANDARD_SECONDS: z.coerce.number().int().positive().default(600), // 10 min
   COOLDOWN_VIP_SECONDS: z.coerce.number().int().positive().default(300), // 5 min

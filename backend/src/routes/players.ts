@@ -12,6 +12,7 @@ import {
   markLoggedPlayerNotificationAsRead,
 } from "@/services/playerNotifications";
 import { getLoggedPlayerPurchaseHistory } from "@/services/playerPurchaseHistory";
+import { createLoggedPlayerRealMoneyPurchase } from "@/services/playerRealMoneyPurchase";
 import { useTransferPassToJoinClub } from "@/services/playerTransfer";
 import { getLoggedPlayerPendingIncomingTransferProposals } from "@/services/playerTransferProposals";
 import { consumeLoggedPlayerVip } from "@/services/playerVipConsumption";
@@ -387,6 +388,56 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
       }
 
       throw new Error(error);
+    }
+  });
+
+  fastify.post("/players/items/purchase/real-money", async (request, reply) => {
+    const bodySchema = z.object({
+      items: z
+        .array(
+          z.object({
+            storeItemId: z.uuid(),
+            quantity: z.number().int().positive(),
+          })
+        )
+        .min(1),
+    });
+
+    const { items } = bodySchema.parse(request.body);
+    const session = request.authSession!;
+
+    try {
+      const checkout = await createLoggedPlayerRealMoneyPurchase({
+        userId: session.user.id,
+        userName: session.user.name,
+        userEmail: session.user.email,
+        items,
+      });
+
+      return reply.status(201).send(checkout);
+    } catch (error) {
+      request.log.error(error, "Failed to create real money purchase checkout");
+
+      if (error instanceof Error) {
+        if (error.message === "Player not found." || error.message === "Store item not found.") {
+          return reply.status(404).send({ error: error.message });
+        }
+
+        if (
+          error.message === "items must contain at least one purchase item." ||
+          error.message === "One or more store items are not available in store." ||
+          error.message === "One or more store items cannot be purchased with real money." ||
+          error.message === "One or more store items do not have a real money price."
+        ) {
+          return reply.status(400).send({ error: error.message });
+        }
+
+        if (error.message === "One or more store items were not found.") {
+          return reply.status(404).send({ error: error.message });
+        }
+      }
+
+      throw error;
     }
   });
 
