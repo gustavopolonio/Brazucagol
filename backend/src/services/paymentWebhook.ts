@@ -28,6 +28,7 @@ export interface InfinitePayWebhookPayload {
 interface ConfirmInfinitePayWebhookResult {
   success: true;
   message: null;
+  alreadyProcessed: boolean;
 }
 
 async function notifyFulfilledPaymentOrderItems({
@@ -114,6 +115,7 @@ export async function confirmInfinitePayWebhookPayment(
         playerId: paymentOrder.playerId,
         items: [] as PaymentOrderItemRow[],
         captureMethod: null,
+        alreadyProcessed: true,
       };
     }
 
@@ -174,6 +176,7 @@ export async function confirmInfinitePayWebhookPayment(
       playerId: paymentOrder.playerId,
       items: paymentOrderItems,
       captureMethod: paymentVerification.capture_method,
+      alreadyProcessed: false,
     };
   });
 
@@ -188,5 +191,6 @@ export async function confirmInfinitePayWebhookPayment(
   return {
     success: true,
     message: null,
+    alreadyProcessed: transactionResult.alreadyProcessed,
   };
 }
