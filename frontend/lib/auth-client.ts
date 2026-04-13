@@ -7,6 +7,9 @@ export const { signIn, useSession, signOut, getSession } = createAuthClient({
     user: {
       hasPlayer: {
         type: "boolean"
+      },
+      role: {
+        type: "string"
       }
     }
   })],

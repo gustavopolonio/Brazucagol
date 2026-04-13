@@ -4,15 +4,21 @@ import { usersRoutes } from "@/routes/users";
 import { protectedClubsRoutes } from "@/routes/clubs";
 import { FastifyInstance } from "fastify";
 import { authPlugin } from "@/plugins/authPlugin";
+import { requirePermission } from "@/lib/authorization";
 
 export async function protectedRoutes(fastify: FastifyInstance) {
   // Auth middleware
   fastify.register(async (app) => {
     await authPlugin(app);
 
-    app.register(protectedPlayersRoutes);
-    app.register(protectedClubsRoutes);
-    app.register(protectedTransferProposalRoutes);
+    app.register(async (gameplayScope) => {
+      gameplayScope.addHook("onRequest", requirePermission("gameplay.access"));
+
+      gameplayScope.register(protectedPlayersRoutes);
+      gameplayScope.register(protectedClubsRoutes);
+      gameplayScope.register(protectedTransferProposalRoutes);
+    });
+
     app.register(usersRoutes);
   });
 }

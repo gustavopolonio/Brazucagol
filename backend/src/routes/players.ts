@@ -16,6 +16,7 @@ import { createLoggedPlayerRealMoneyPurchase } from "@/services/playerRealMoneyP
 import { useTransferPassToJoinClub } from "@/services/playerTransfer";
 import { getLoggedPlayerPendingIncomingTransferProposals } from "@/services/playerTransferProposals";
 import { consumeLoggedPlayerVip } from "@/services/playerVipConsumption";
+import { canCreatePlayer } from "@/lib/authorization";
 
 export const publicPlayersRoutes = async (fastify: FastifyInstance) => {
   fastify.get("/players", async (request, reply) => {
@@ -246,6 +247,10 @@ export const protectedPlayersRoutes = async (fastify: FastifyInstance) => {
 
     const { playerName, clubId } = createPlayerBodySchema.parse(request.body);
     const session = request.authSession!;
+
+    if (!canCreatePlayer(session.user.role)) {
+      return reply.status(403).send({ error: "Only gameplay accounts can create a player." });
+    }
 
     if (session.user.hasPlayer) {
       return reply.status(400).send({ error: "Player already created for this account." });

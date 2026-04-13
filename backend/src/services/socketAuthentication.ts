@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/drizzle";
 import { getPlayerIdByUserId } from "@/repositories/playerRepository";
+import { canAccessGameplay } from "@/lib/authorization";
 
 interface ResolvePlayerIdFromSocketTokenProps {
   token: string | undefined;
@@ -19,7 +20,7 @@ export async function resolvePlayerIdFromSocketToken({
   const session = await auth.api.getSession({ headers });
   console.log("SESSION FROM SOCKET:", session);
 
-  if (!session?.user?.id || !session.user.hasPlayer) {
+  if (!session?.user?.id || !canAccessGameplay(session.user.role) || !session.user.hasPlayer) {
     return null;
   }
 
