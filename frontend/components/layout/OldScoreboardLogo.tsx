@@ -7,14 +7,14 @@ export function OldScoreboardLogo() {
           <div className="absolute inset-0 opacity-45 [background-image:linear-gradient(var(--homepage-logo-grid)_1px,transparent_1px),linear-gradient(90deg,var(--homepage-logo-grid)_1px,transparent_1px)] [background-size:20px_20px]" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,var(--homepage-logo-shine-start)_0%,transparent_22%,transparent_78%,var(--homepage-logo-shine-end)_100%)]" />
 
-          <div className="relative text-left leading-none">
-            <div className="font-mono text-[50px] font-black uppercase tracking-[0.08em] text-[var(--homepage-logo-brazuca)] [text-shadow:0_0_5px_var(--homepage-logo-brazuca-glow-strong),0_0_12px_var(--homepage-logo-brazuca-glow-soft)]">
+          <h1 className="relative text-left leading-none">
+            <span className="block font-mono text-[50px] font-black uppercase tracking-[0.08em] text-[var(--homepage-logo-brazuca)] [text-shadow:0_0_5px_var(--homepage-logo-brazuca-glow-strong),0_0_12px_var(--homepage-logo-brazuca-glow-soft)]">
               BRAZUCA
-            </div>
-            <div className="mt-2 font-mono text-[42px] font-black uppercase tracking-[0.14em] text-[var(--homepage-logo-gol)] [text-shadow:0_0_6px_var(--homepage-logo-gol-glow-strong),0_0_14px_var(--homepage-logo-gol-glow-soft),0_0_2px_var(--homepage-logo-gol-glow-blue)]">
+            </span>
+            <span className="mt-2 block font-mono text-[42px] font-black uppercase tracking-[0.14em] text-[var(--homepage-logo-gol)] [text-shadow:0_0_6px_var(--homepage-logo-gol-glow-strong),0_0_14px_var(--homepage-logo-gol-glow-soft),0_0_2px_var(--homepage-logo-gol-glow-blue)]">
               GOL
-            </div>
-          </div>
+            </span>
+          </h1>
         </div>
       </div>
     </div>
