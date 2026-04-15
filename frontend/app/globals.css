@@ -1,0 +1,31 @@
+@import "tailwindcss";
+@import "./theme.css";
+
+:root {
+  --font-brazuca: "Trebuchet MS", "Arial Rounded MT Bold", "Verdana", sans-serif;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: var(--font-brazuca);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: var(--selection);
+  color: var(--selection-foreground);
+}

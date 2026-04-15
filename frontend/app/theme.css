@@ -1,0 +1,291 @@
+:root {
+  color-scheme: light;
+
+  /* shadcn-style semantic tokens */
+  --background: #2f8d10;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+  --primary: #84d400;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f1f1;
+  --secondary-foreground: #4c4c4c;
+  --muted: #f7f7f7;
+  --muted-foreground: #7a7a7a;
+  --accent: #eef8d0;
+  --accent-foreground: #3f7b00;
+  --destructive: #dc3030;
+  --destructive-foreground: #ffffff;
+  --border: #d8d8d8;
+  --input: #e5e5e5;
+  --ring: #4eb6ff;
+
+  --white: #ffffff;
+  --black: #000000;
+
+  --selection: rgba(34, 197, 94, 0.28);
+  --selection-foreground: #052e16;
+
+  /* Homepage shell */
+  --homepage-pitch-stripe-light: #3aa311;
+  --homepage-pitch-stripe-dark: #328f0e;
+  --homepage-pitch-gradient-top: #4ab61c;
+  --homepage-pitch-highlight-strong: rgba(255, 255, 255, 0.08);
+  --homepage-pitch-highlight-soft: rgba(255, 255, 255, 0.05);
+  --homepage-pitch-vignette: rgba(0, 0, 0, 0.08);
+  --homepage-card-pitch-stripe-light: #43b512;
+  --homepage-card-pitch-stripe-dark: #3ba50f;
+  --homepage-card-shadow: rgba(43, 86, 7, 0.22);
+  --homepage-card-inset: rgba(34, 87, 7, 0.2);
+  --homepage-shell-shadow: rgba(0, 0, 0, 0.22);
+  --homepage-noise-dot: rgba(255, 255, 255, 0.22);
+  --homepage-sheen: rgba(255, 255, 255, 0.35);
+
+  /* Shared header overlay */
+  --homepage-header-overlay-start: rgba(7, 18, 36, 0.3);
+  --homepage-header-overlay-mid: rgba(8, 20, 40, 0.4);
+  --homepage-header-overlay-end: rgba(7, 18, 30, 0.48);
+
+  /* Top bar */
+  --homepage-search-border: #636363;
+  --homepage-search-start: #666666;
+  --homepage-search-end: #404040;
+  --homepage-topbar-inset: rgba(255, 255, 255, 0.35);
+  --homepage-logout-border: #8a1d1d;
+  --homepage-logout-start: #dc3030;
+  --homepage-logout-end: #9d1717;
+  --homepage-logout-inset: rgba(255, 255, 255, 0.2);
+
+  /* Header panel */
+  --homepage-level-icon: #ef4444;
+  --homepage-progress-border: #2a5b93;
+  --homepage-progress-track: #b7d7f5;
+  --homepage-progress-start: #2c6db3;
+  --homepage-progress-end: #4eb6ff;
+  --homepage-stat-highlight: #f6c10e;
+
+  /* Panel cards */
+  --homepage-panel-title-border: #d6f06c;
+  --homepage-panel-title-start: #bdf41a;
+  --homepage-panel-title-end: #84d400;
+  --homepage-panel-title-shadow: rgba(73, 128, 6, 0.45);
+  --homepage-panel-surface-muted: #f1f1f1;
+  --homepage-panel-surface-soft: #f5f5f5;
+  --homepage-panel-surface-subtle: #f7f7f7;
+  --homepage-panel-border: #d8d8d8;
+  --homepage-panel-divider: #e7e7e7;
+  --homepage-panel-divider-soft: #ededed;
+  --homepage-panel-text: #4c4c4c;
+  --homepage-panel-text-strong: #5f5f5f;
+  --homepage-panel-text-muted: #7a7a7a;
+  --homepage-panel-text-soft: #6b6b6b;
+  --homepage-panel-chevron: #5c5c5c;
+  --homepage-panel-hover: #f5fbe0;
+  --homepage-panel-hover-foreground: #3f7b00;
+  --homepage-surface-inner-border: #e3e3e3;
+  --homepage-record-label: #70a000;
+  --homepage-record-value: #0f5795;
+  --homepage-record-supporting: #5d8f00;
+  --homepage-row-name: #4f8db7;
+
+  /* Ranking highlights */
+  --homepage-highlight-border: #d8e7b4;
+  --homepage-highlight-start: #fbffef;
+  --homepage-highlight-end: #eef8d0;
+  --homepage-highlight-label: #6f9500;
+  --homepage-highlight-value: #5f7c19;
+  --homepage-highlight-inset: rgba(255, 255, 255, 0.9);
+
+  /* My account / sponsors */
+  --homepage-account-item-border: #ececec;
+  --homepage-account-item-end: #f8f8f8;
+  --homepage-account-item-hover-border: #d8e8b7;
+  --homepage-account-item-hover-start: #faffef;
+  --homepage-account-item-hover-end: #eef9d2;
+  --homepage-account-item-inset: rgba(255, 255, 255, 0.85);
+  --homepage-account-item-hover-inset: rgba(255, 255, 255, 0.92);
+  --homepage-account-item-hover-shadow: rgba(120, 146, 58, 0.18);
+  --homepage-account-label: #575757;
+  --homepage-notification-start: #ffeb7f;
+  --homepage-notification-end: #ff5c39;
+  --homepage-notification-shadow: rgba(0, 0, 0, 0.2);
+  --homepage-vip-border: #f2cf65;
+  --homepage-vip-start: #fff7bf;
+  --homepage-vip-end: #ffe17d;
+  --homepage-vip-text: #9c7002;
+  --homepage-vip-shadow: rgba(234, 179, 8, 0.18);
+  --homepage-sponsor-border: #e5e5e5;
+  --homepage-partner-border: #8fcf12;
+  --homepage-partner-start: #b8ee30;
+  --homepage-partner-end: #86c100;
+  --homepage-partner-shadow: rgba(21, 128, 61, 0.22);
+
+  /* Ranking refresh */
+  --homepage-refresh-border: #d4e7a9;
+  --homepage-refresh-start: rgba(255, 255, 255, 0.82);
+  --homepage-refresh-end: rgba(243, 251, 225, 0.92);
+  --homepage-refresh-inset: rgba(255, 255, 255, 0.95);
+  --homepage-refresh-track-border: #d7e2b8;
+  --homepage-refresh-track: #edf4db;
+  --homepage-refresh-progress-start: #93c915;
+  --homepage-refresh-progress-end: #c5ed5a;
+
+  /* Online counter */
+  --homepage-counter-border: #2b2b2b;
+  --homepage-counter-start: #454545;
+  --homepage-counter-end: #1f1f1f;
+  --homepage-counter-shadow: rgba(0, 0, 0, 0.35);
+  --homepage-counter-screen-border: #080808;
+  --homepage-counter-screen-start: #191919;
+  --homepage-counter-screen-end: #090909;
+  --homepage-counter-screen-inset: rgba(255, 255, 255, 0.06);
+  --homepage-counter-up-start: #1f4f08;
+  --homepage-counter-up-end: #0d2602;
+  --homepage-counter-up-text: #62ff47;
+  --homepage-counter-up-glow: rgba(98, 255, 71, 0.6);
+  --homepage-counter-digit-border: #111111;
+  --homepage-counter-digit-start: #101010;
+  --homepage-counter-digit-end: #050505;
+  --homepage-counter-down-start: #5a140f;
+  --homepage-counter-down-end: #260503;
+  --homepage-counter-down-text: #ff5c47;
+
+  /* Scoreboard timer */
+  --homepage-timer-border: #4b4b4b;
+  --homepage-timer-start: #111111;
+  --homepage-timer-end: #1f1f1f;
+  --homepage-timer-inset: rgba(255, 255, 255, 0.08);
+  --homepage-timer-shadow: rgba(0, 0, 0, 0.35);
+  --homepage-timer-colon: #ffb347;
+  --homepage-timer-colon-glow: rgba(255, 179, 71, 0.45);
+  --homepage-timer-digit-border: #2a2a2a;
+  --homepage-timer-digit-start: #1d1d1d;
+  --homepage-timer-digit-end: #050505;
+  --homepage-timer-digit-glow: rgba(255, 179, 71, 0.55);
+
+  /* Player identity */
+  --homepage-avatar-skin-start: #f5d0a9;
+  --homepage-avatar-skin-end: #c68642;
+  --homepage-avatar-fallback-start: #4b5563;
+  --homepage-avatar-fallback-end: #1f2937;
+  --homepage-avatar-shadow: rgba(0, 0, 0, 0.3);
+  --homepage-nameplate-background: rgba(0, 0, 0, 0.18);
+  --homepage-nameplate-inset: rgba(255, 255, 255, 0.08);
+  --homepage-nameplate-shadow: rgba(0, 0, 0, 0.45);
+  --homepage-nameplate-text-shadow: rgba(0, 0, 0, 0.55);
+  --homepage-footer-shadow: rgba(0, 0, 0, 0.35);
+
+  /* Scoreboard logo */
+  --homepage-logo-frame-top: #bcc1ca;
+  --homepage-logo-frame-upper-mid: #7f8692;
+  --homepage-logo-frame-mid: #505964;
+  --homepage-logo-frame-lower-mid: #838b97;
+  --homepage-logo-frame-bottom: #c7cdd7;
+  --homepage-logo-frame-shadow: rgba(0, 0, 0, 0.32);
+  --homepage-logo-screen-border: #11161f;
+  --homepage-logo-screen-background: #05070b;
+  --homepage-logo-screen-inset-top: rgba(255, 255, 255, 0.05);
+  --homepage-logo-screen-inset-bottom: rgba(0, 0, 0, 0.55);
+  --homepage-logo-radial-start: rgba(18, 24, 32, 0.45);
+  --homepage-logo-radial-end: rgba(5, 7, 11, 0.96);
+  --homepage-logo-grid: rgba(180, 196, 220, 0.16);
+  --homepage-logo-shine-start: rgba(255, 255, 255, 0.05);
+  --homepage-logo-shine-end: rgba(255, 255, 255, 0.04);
+  --homepage-logo-brazuca: #59dc3a;
+  --homepage-logo-brazuca-glow-strong: rgba(89, 220, 58, 0.6);
+  --homepage-logo-brazuca-glow-soft: rgba(89, 220, 58, 0.24);
+  --homepage-logo-gol: #ffd539;
+  --homepage-logo-gol-glow-strong: rgba(255, 213, 57, 0.68);
+  --homepage-logo-gol-glow-soft: rgba(255, 213, 57, 0.26);
+  --homepage-logo-gol-glow-blue: rgba(78, 182, 255, 0.35);
+
+  /* Action buttons */
+  --homepage-action-track: #d6d6d6;
+  --homepage-action-inner-border: #e9e9e9;
+  --homepage-action-shadow: rgba(95, 95, 95, 0.3);
+  --homepage-action-ball-shadow: rgba(0, 0, 0, 0.25);
+  --homepage-action-text-shadow: rgba(0, 0, 0, 0.7);
+
+  /* Club carousel */
+  --homepage-carousel-border: #6aa400;
+  --homepage-carousel-start: #bfff2f;
+  --homepage-carousel-end: #72c207;
+  --homepage-carousel-foreground: #245100;
+  --homepage-carousel-inset: rgba(255, 255, 255, 0.28);
+  --homepage-carousel-shadow: rgba(0, 0, 0, 0.16);
+
+  /* Data-driven club and action colors */
+  --club-cruzeiro-primary: #1d4ed8;
+  --club-cruzeiro-secondary: #ffffff;
+  --club-atletico-primary: #111827;
+  --club-atletico-secondary: #f8fafc;
+  --club-bahia-primary: #1d4ed8;
+  --club-bahia-secondary: #ef4444;
+  --club-botafogo-primary: #111827;
+  --club-botafogo-secondary: #f8fafc;
+  --club-chapecoense-primary: #15803d;
+  --club-chapecoense-secondary: #f8fafc;
+  --club-fluminense-primary: #7f1d1d;
+  --club-fluminense-secondary: #166534;
+  --club-bragantino-primary: #dc2626;
+  --club-bragantino-secondary: #f8fafc;
+  --club-palmeiras-primary: #166534;
+  --club-palmeiras-secondary: #f8fafc;
+  --club-mirassol-primary: #facc15;
+  --club-mirassol-secondary: #065f46;
+  --club-internacional-primary: #b91c1c;
+  --club-internacional-secondary: #f8fafc;
+  --club-santos-primary: #e5e7eb;
+  --club-santos-secondary: #111827;
+  --club-sao-paulo-primary: #111827;
+  --club-sao-paulo-secondary: #ef4444;
+
+  --account-messages-primary: #2563eb;
+  --account-messages-secondary: #bfdbfe;
+  --account-profile-primary: #db2777;
+  --account-profile-secondary: #fbcfe8;
+  --account-switch-club-primary: #9333ea;
+  --account-switch-club-secondary: #e9d5ff;
+  --account-vips-primary: #ca8a04;
+  --account-vips-secondary: #fde68a;
+  --account-settings-primary: #0f766e;
+  --account-settings-secondary: #99f6e4;
+
+  --action-auto-primary: #16a34a;
+  --action-auto-secondary: #86efac;
+  --action-penalty-primary: #f97316;
+  --action-penalty-secondary: #fdba74;
+  --action-free-kick-primary: #2563eb;
+  --action-free-kick-secondary: #93c5fd;
+  --action-trail-primary: #8b5cf6;
+  --action-trail-secondary: #c4b5fd;
+
+  --club-auriverde-primary: #0f7b3f;
+  --club-auriverde-secondary: #f6d94d;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-white: var(--white);
+  --color-black: var(--black);
+}
