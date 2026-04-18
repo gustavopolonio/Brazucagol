@@ -7,6 +7,7 @@ export type ClubBadgeData = {
 
 export type MenuItem = {
   label: string;
+  href?: string;
 };
 
 export type AccountOption = {

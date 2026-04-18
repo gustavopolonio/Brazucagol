@@ -4,7 +4,7 @@ export function PanelCard({
   title,
   children,
 }: Readonly<{
-  title: string;
+  title: ReactNode;
   children: ReactNode;
 }>) {
   return (
