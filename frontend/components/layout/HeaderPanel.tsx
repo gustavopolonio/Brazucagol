@@ -1,5 +1,7 @@
 import { ActionBar } from "@/components/layout/ActionBar";
 import { ClubBadge } from "@/components/layout/ClubBadge";
+import { LevelIconBadge } from "@/components/layout/LevelIconBadge";
+import { LevelProgressBar } from "@/components/layout/LevelProgressBar";
 import { OldScoreboardLogo } from "@/components/layout/OldScoreboardLogo";
 import { ProfileStat } from "@/components/layout/ProfileStat";
 import type { HeaderPanelData } from "@/components/layout/layoutTypes";
@@ -48,9 +50,7 @@ export function HeaderPanel() {
         <div className="flex gap-6 p-4 rounded-[18px] border border-white/70 bg-[linear-gradient(180deg,var(--homepage-header-overlay-start)_0%,var(--homepage-header-overlay-mid)_48%,var(--homepage-header-overlay-end)_100%)]">
           <div>
             <div className="mb-2 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-white">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md border border-white bg-white/10">
-                <Flame className="h-5 w-5 text-(--homepage-level-icon)" strokeWidth={2.5} />
-              </div>
+              <LevelIconBadge icon={Flame} />
               <div className="flex flex-col">
                 <span>Special Dark - 39</span>
                 <div className="text-[13px] font-black uppercase tracking-[0.04em] text-white/95">
@@ -59,12 +59,7 @@ export function HeaderPanel() {
               </div>
             </div>
 
-            <div className="mb-3 h-3 overflow-hidden rounded-full border border-(--homepage-progress-border) bg-(--homepage-progress-track)">
-              <div
-                className="h-full bg-[linear-gradient(90deg,var(--homepage-progress-start)_0%,var(--homepage-progress-end)_100%)]"
-                style={{ width: `${levelProgressPercent}%` }}
-              />
-            </div>
+            <LevelProgressBar className="mb-3" progressPercent={levelProgressPercent} />
 
             <div className="flex gap-6">
               {headerPanelData.profileStats.map((profileStatValue, index) => (
