@@ -11,7 +11,7 @@ import { ChevronRight } from "lucide-react";
 const menuItems: MenuItem[] = [
   { label: "Início", href: "/" },
   { label: "Rodadas", href: "/rodadas" },
-  { label: "Notícias" },
+  { label: "Notícias", href: "/noticias" },
   { label: "Níveis" },
   { label: "Premiações" },
   { label: "Ranking" },
