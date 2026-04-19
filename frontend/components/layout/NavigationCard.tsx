@@ -12,7 +12,7 @@ const menuItems: MenuItem[] = [
   { label: "Início", href: "/" },
   { label: "Rodadas", href: "/rodadas" },
   { label: "Notícias", href: "/noticias" },
-  { label: "Níveis" },
+  { label: "Níveis", href: "/niveis" },
   { label: "Premiações" },
   { label: "Ranking" },
   { label: "Regras" },
