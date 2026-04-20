@@ -41,7 +41,7 @@ export function NavigationCard() {
               )}
               disabled={!itemHref}
               key={item.label}
-              onClick={itemHref ? () => router.push(itemHref) : undefined}
+              onClick={itemHref ? () => router.push(itemHref, { scroll: false }) : undefined}
               variant="menu"
             >
               <span>{item.label}</span>
