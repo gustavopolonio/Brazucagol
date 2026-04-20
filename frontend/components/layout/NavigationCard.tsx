@@ -17,7 +17,6 @@ const menuItems: MenuItem[] = [
   { label: "Ranking", href: "/ranking" },
   { label: "Regras" },
   { label: "Transferências" },
-  { label: "Ajuda" },
 ];
 
 export function NavigationCard() {
