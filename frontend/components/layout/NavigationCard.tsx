@@ -14,9 +14,9 @@ const menuItems: MenuItem[] = [
   { label: "Notícias", href: "/noticias" },
   { label: "Níveis", href: "/niveis" },
   { label: "Premiações", href: "/premiacoes" },
-  { label: "Ranking", href: "/ranking" },
+  { label: "Artilharia", href: "/ranking" },
   { label: "Regras", href: "/regras" },
-  { label: "Transferências" },
+  { label: "Central do Mercado", href: "/mercado" },
 ];
 
 export function NavigationCard() {
