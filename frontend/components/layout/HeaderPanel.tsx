@@ -1,7 +1,7 @@
 import { ActionBar } from "@/components/layout/ActionBar";
 import { ClubBadge } from "@/components/layout/ClubBadge";
 import { LevelIconBadge } from "@/components/layout/LevelIconBadge";
-import { LevelProgressBar } from "@/components/layout/LevelProgressBar";
+import { ProgressBar } from "@/components/layout/ProgressBar";
 import { OldScoreboardLogo } from "@/components/layout/OldScoreboardLogo";
 import { ProfileStat } from "@/components/layout/ProfileStat";
 import type { HeaderPanelData } from "@/components/layout/layoutTypes";
@@ -59,7 +59,7 @@ export function HeaderPanel() {
               </div>
             </div>
 
-            <LevelProgressBar className="mb-3" progressPercent={levelProgressPercent} />
+            <ProgressBar className="mb-3" progressPercent={levelProgressPercent} />
 
             <div className="flex gap-6">
               {headerPanelData.profileStats.map((profileStatValue, index) => (

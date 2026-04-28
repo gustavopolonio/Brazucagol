@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 import { LevelIconBadge } from "@/components/layout/LevelIconBadge";
-import { LevelProgressBar } from "@/components/layout/LevelProgressBar";
+import { ProgressBar } from "@/components/layout/ProgressBar";
 import { PanelCard } from "@/components/layout/PanelCard";
 import { levels } from "@/components/levels/levels-data";
 import {
@@ -135,7 +135,7 @@ export function LevelsPage() {
                       {currentLevelProgressPercentLabel}
                     </p>
                   </div>
-                  <LevelProgressBar progressPercent={currentLevelProgressPercent} />
+                  <ProgressBar progressPercent={currentLevelProgressPercent} />
                 </div>
               )}
             </div>
