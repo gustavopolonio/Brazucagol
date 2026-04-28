@@ -12,6 +12,7 @@ export type MenuItem = {
 
 export type AccountOption = {
   label: string;
+  href?: string;
   iconName: "mail" | "user" | "arrow-left-right" | "star" | "settings";
   primaryColor: string;
   secondaryColor: string;
@@ -46,7 +47,6 @@ export type TopBarData = {
   countdown: string;
   currentSeasonLabel: string;
   playerName: string;
-  playerAvatarUrl?: string;
   clubPrimaryColor: string;
   clubSecondaryColor: string;
   logoutLabel: string;

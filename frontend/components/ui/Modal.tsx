@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/cn";
@@ -46,11 +47,11 @@ export function Modal({
     };
   }, [onClose, open]);
 
-  if (!open) {
+  if (!open || typeof document === "undefined") {
     return null;
   }
 
-  return (
+  return createPortal(
     <div
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(26,21,14,0.58)] px-3 py-6 backdrop-blur-[3px] md:px-6"
@@ -90,6 +91,7 @@ export function Modal({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

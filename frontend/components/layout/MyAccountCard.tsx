@@ -1,6 +1,11 @@
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
+
 import { PanelCard } from "@/components/layout/PanelCard";
 import type { AccountOption } from "@/components/layout/layoutTypes";
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/cn";
 import { ArrowLeftRight, Mail, Settings, Star, User } from "lucide-react";
 
 const accountOptionIcons = {
@@ -13,26 +18,41 @@ const accountOptionIcons = {
 
 const accountOptions: AccountOption[] = [
   { label: "Mensagens", iconName: "mail", primaryColor: "var(--account-messages-primary)", secondaryColor: "var(--account-messages-secondary)", unreadCount: 12 },
-  { label: "Perfil", iconName: "user", primaryColor: "var(--account-profile-primary)", secondaryColor: "var(--account-profile-secondary)" },
+  { label: "Perfil", href: "/perfil", iconName: "user", primaryColor: "var(--account-profile-primary)", secondaryColor: "var(--account-profile-secondary)" },
   { label: "Trocar Time", iconName: "arrow-left-right", primaryColor: "var(--account-switch-club-primary)", secondaryColor: "var(--account-switch-club-secondary)" },
   { label: "Meus VIPs", iconName: "star", primaryColor: "var(--account-vips-primary)", secondaryColor: "var(--account-vips-secondary)" },
   { label: "Configurações", iconName: "settings", primaryColor: "var(--account-settings-primary)", secondaryColor: "var(--account-settings-secondary)" },
 ];
 
 export function MyAccountCard() {
+  const pathname = usePathname();
+  const router = useRouter();
+
   return (
     <PanelCard title="MINHA CONTA">
       <div className="rounded-b-[18px] border border-border bg-[linear-gradient(180deg,var(--card)_0%,var(--homepage-panel-surface-muted)_100%)] p-4 pt-8">
         <div className="space-y-2">
           {accountOptions.map((accountOption) => {
             const AccountOptionIcon = accountOptionIcons[accountOption.iconName];
+            const optionHref = accountOption.href;
+            const isUnavailable = !optionHref;
+            const isSelected = optionHref ? pathname === optionHref : false;
 
             return (
               <Button
-                className="w-full justify-start gap-3 px-3 py-2.5 text-left duration-150"
+                className={cn(
+                  "justify-start gap-3 rounded-[14px] px-3 py-2.5 duration-150",
+                  isSelected
+                    ? "bg-[linear-gradient(180deg,var(--rounds-highlight-start)_0%,var(--rounds-highlight-end)_100%)] text-[var(--rounds-highlight-text)] shadow-[0_1px_0_rgba(255,255,255,0.2)_inset]"
+                    : "",
+                  isUnavailable
+                    ? "border border-dashed border-[var(--homepage-panel-divider)] bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.78)_0px,rgba(255,255,255,0.78)_8px,rgba(229,233,219,0.82)_8px,rgba(229,233,219,0.82)_16px)] text-[var(--homepage-panel-text-muted)] hover:bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.78)_0px,rgba(255,255,255,0.78)_8px,rgba(229,233,219,0.82)_8px,rgba(229,233,219,0.82)_16px)] hover:text-[var(--homepage-panel-text-muted)]"
+                    : "",
+                )}
+                disabled={isUnavailable}
                 key={accountOption.label}
-                radius="xl"
-                variant="secondary"
+                onClick={optionHref ? () => router.push(optionHref, { scroll: false }) : undefined}
+                variant="menu"
               >
                 <span className="relative flex h-6 w-6 shrink-0 items-center justify-center">
                   <AccountOptionIcon
@@ -49,7 +69,12 @@ export function MyAccountCard() {
                     </span>
                   ) : null}
                 </span>
-                <span className="text-[15px] font-black text-(--homepage-account-label)">
+                <span
+                  className={cn(
+                    "",
+                    isSelected ? "text-[var(--rounds-highlight-text)]" : "",
+                  )}
+                >
                   {accountOption.label}
                 </span>
               </Button>

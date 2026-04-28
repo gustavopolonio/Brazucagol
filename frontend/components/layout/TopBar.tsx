@@ -13,7 +13,6 @@ const topBarData: TopBarData = {
   countdown: "15:01:34",
   currentSeasonLabel: "39",
   playerName: "Canhotinha10",
-  playerAvatarUrl: "/images/ui/player-avatar-face.svg",
   clubPrimaryColor: "var(--club-auriverde-primary)",
   clubSecondaryColor: "var(--club-auriverde-secondary)",
   logoutLabel: "Sair",
@@ -42,7 +41,7 @@ export function TopBar() {
 
       <div className="flex items-center justify-end gap-6">
         <div className="flex min-w-0 items-center gap-2">
-          <PlayerAvatar avatarUrl={topBarData.playerAvatarUrl} playerName={topBarData.playerName} />
+          <PlayerAvatar playerName={topBarData.playerName} />
           <PlayerJerseyNameplate
             playerName={topBarData.playerName}
             primaryColor={topBarData.clubPrimaryColor}
