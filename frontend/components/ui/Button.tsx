@@ -36,15 +36,15 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 const buttonVariantClasses: Record<ButtonVariant, string> = {
   unstyled: "",
   primary:
-    "inline-flex items-center justify-center border border-[var(--homepage-partner-border)] bg-[linear-gradient(180deg,var(--homepage-partner-start)_0%,var(--homepage-partner-end)_100%)] text-white shadow-[0_4px_0_var(--homepage-partner-shadow)] hover:brightness-105",
+    "inline-flex items-center justify-center border border-[var(--homepage-partner-border)] bg-[linear-gradient(180deg,var(--homepage-partner-start)_0%,var(--homepage-partner-end)_100%)] text-white shadow-[0_4px_0_var(--homepage-partner-shadow)] enabled:hover:brightness-105",
   secondary:
-    "inline-flex items-center justify-center border border-[var(--homepage-account-item-border)] bg-[linear-gradient(180deg,var(--card)_0%,var(--homepage-account-item-end)_100%)] text-[var(--homepage-panel-text-strong)] shadow-[0_1px_0_var(--homepage-account-item-inset)_inset] hover:border-[var(--homepage-account-item-hover-border)] hover:bg-[linear-gradient(180deg,var(--homepage-account-item-hover-start)_0%,var(--homepage-account-item-hover-end)_100%)] hover:shadow-[0_1px_0_var(--homepage-account-item-hover-inset)_inset,0_6px_12px_var(--homepage-account-item-hover-shadow)]",
+    "inline-flex items-center justify-center border border-[var(--homepage-account-item-border)] bg-[linear-gradient(180deg,var(--card)_0%,var(--homepage-account-item-end)_100%)] text-[var(--homepage-panel-text-strong)] shadow-[0_1px_0_var(--homepage-account-item-inset)_inset] enabled:hover:border-[var(--homepage-account-item-hover-border)] enabled:hover:bg-[linear-gradient(180deg,var(--homepage-account-item-hover-start)_0%,var(--homepage-account-item-hover-end)_100%)] enabled:hover:shadow-[0_1px_0_var(--homepage-account-item-hover-inset)_inset,0_6px_12px_var(--homepage-account-item-hover-shadow)]",
   destructive:
-    "inline-flex items-center justify-center border border-[var(--homepage-logout-border)] bg-[linear-gradient(180deg,var(--homepage-logout-start)_0%,var(--homepage-logout-end)_100%)] text-white shadow-[0_1px_0_var(--homepage-logout-inset)_inset] hover:brightness-110",
+    "inline-flex items-center justify-center border border-[var(--homepage-logout-border)] bg-[linear-gradient(180deg,var(--homepage-logout-start)_0%,var(--homepage-logout-end)_100%)] text-white shadow-[0_1px_0_var(--homepage-logout-inset)_inset] enabled:hover:brightness-110",
   carousel:
-    "inline-flex items-center justify-center border border-[var(--homepage-carousel-border)] bg-[linear-gradient(180deg,var(--homepage-carousel-start)_0%,var(--homepage-carousel-end)_100%)] text-[var(--homepage-carousel-foreground)] shadow-[0_2px_0_var(--homepage-carousel-inset)_inset,0_4px_10px_var(--homepage-carousel-shadow)] hover:brightness-105",
+    "inline-flex items-center justify-center border border-[var(--homepage-carousel-border)] bg-[linear-gradient(180deg,var(--homepage-carousel-start)_0%,var(--homepage-carousel-end)_100%)] text-[var(--homepage-carousel-foreground)] shadow-[0_2px_0_var(--homepage-carousel-inset)_inset,0_4px_10px_var(--homepage-carousel-shadow)] enabled:hover:brightness-105",
   menu:
-    "w-full flex items-center justify-between text-left text-[15px] font-black text-[var(--homepage-panel-text)] hover:bg-[var(--homepage-panel-hover)] hover:text-[var(--homepage-panel-hover-foreground)]",
+    "w-full flex items-center justify-between text-left text-[15px] font-black text-[var(--homepage-panel-text)] enabled:hover:bg-[var(--homepage-panel-hover)] enabled:hover:text-[var(--homepage-panel-hover-foreground)]",
 };
 
 const buttonSizeClasses: Record<ButtonSize, string> = {
@@ -77,7 +77,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "cursor-pointer transition disabled:cursor-default disabled:opacity-60",
+        "cursor-pointer transition disabled:cursor-not-allowed disabled:opacity-60",
         buttonVariantClasses[variant],
         buttonSizeClasses[size],
         buttonRadiusClasses[radius],

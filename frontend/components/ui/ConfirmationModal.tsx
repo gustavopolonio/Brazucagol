@@ -1,10 +1,13 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 
 type ConfirmationModalProps = {
   cancelLabel?: string;
+  children?: ReactNode;
   confirmLabel?: string;
   message: string;
   onCancel: () => void;
@@ -14,6 +17,7 @@ type ConfirmationModalProps = {
 
 export function ConfirmationModal({
   cancelLabel = "Cancelar",
+  children,
   confirmLabel = "Confirmar",
   message,
   onCancel,
@@ -26,6 +30,8 @@ export function ConfirmationModal({
         <p className="text-base font-bold leading-relaxed text-[var(--homepage-panel-text)]">
           {message}
         </p>
+
+        {children}
 
         <div className="flex justify-end gap-3">
           <Button className="rounded-full px-5 py-3 text-sm font-black" onClick={onCancel} variant="secondary">

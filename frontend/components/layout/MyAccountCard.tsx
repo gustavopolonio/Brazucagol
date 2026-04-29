@@ -6,21 +6,21 @@ import { PanelCard } from "@/components/layout/PanelCard";
 import type { AccountOption } from "@/components/layout/layoutTypes";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
-import { ArrowLeftRight, Mail, Settings, Star, User } from "lucide-react";
+import { ArrowLeftRight, Mail, Settings, Backpack, User } from "lucide-react";
 
 const accountOptionIcons = {
   mail: Mail,
   user: User,
   "arrow-left-right": ArrowLeftRight,
-  star: Star,
+  backpack: Backpack,
   settings: Settings,
 } as const;
 
 const accountOptions: AccountOption[] = [
   { label: "Mensagens", iconName: "mail", primaryColor: "var(--account-messages-primary)", secondaryColor: "var(--account-messages-secondary)", unreadCount: 12 },
   { label: "Perfil", href: "/perfil", iconName: "user", primaryColor: "var(--account-profile-primary)", secondaryColor: "var(--account-profile-secondary)" },
+  { label: "Inventário", href: "/inventario", iconName: "backpack", primaryColor: "var(--account-vips-primary)", secondaryColor: "var(--account-vips-secondary)" },
   { label: "Trocar Time", href: "/trocar-time", iconName: "arrow-left-right", primaryColor: "var(--account-switch-club-primary)", secondaryColor: "var(--account-switch-club-secondary)" },
-  { label: "Meus VIPs", iconName: "star", primaryColor: "var(--account-vips-primary)", secondaryColor: "var(--account-vips-secondary)" },
   { label: "Configurações", href: "/configuracoes", iconName: "settings", primaryColor: "var(--account-settings-primary)", secondaryColor: "var(--account-settings-secondary)" },
 ];
 

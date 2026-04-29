@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { ProfileAvatarClient } from "@/components/profile/ProfileAvatarClient";
 import { ProfileHoverRevealTag } from "@/components/profile/ProfileHoverRevealTag";
+import { ProfileInventoryTag } from "@/components/profile/ProfileInventoryTag";
 import type { PlayerProfileData } from "@/components/profile/profileTypes";
 import { getRolePresentation } from "@/components/profile/profileUtils";
 
@@ -89,6 +90,12 @@ export function ProfileAvatarCard({
             ) : null}
           </div>
         </div>
+
+        {isViewingOwnProfile ? (
+          <div className="absolute bottom-3 right-3 z-10">
+            <ProfileInventoryTag />
+          </div>
+        ) : null}
       </div>
     </section>
   );

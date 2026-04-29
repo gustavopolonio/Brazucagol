@@ -13,7 +13,7 @@ export type MenuItem = {
 export type AccountOption = {
   label: string;
   href?: string;
-  iconName: "mail" | "user" | "arrow-left-right" | "star" | "settings";
+  iconName: "mail" | "user" | "arrow-left-right" | "backpack" | "settings";
   primaryColor: string;
   secondaryColor: string;
   unreadCount?: number;
