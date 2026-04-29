@@ -19,7 +19,7 @@ const accountOptionIcons = {
 const accountOptions: AccountOption[] = [
   { label: "Mensagens", iconName: "mail", primaryColor: "var(--account-messages-primary)", secondaryColor: "var(--account-messages-secondary)", unreadCount: 12 },
   { label: "Perfil", href: "/perfil", iconName: "user", primaryColor: "var(--account-profile-primary)", secondaryColor: "var(--account-profile-secondary)" },
-  { label: "Trocar Time", iconName: "arrow-left-right", primaryColor: "var(--account-switch-club-primary)", secondaryColor: "var(--account-switch-club-secondary)" },
+  { label: "Trocar Time", href: "/trocar-time", iconName: "arrow-left-right", primaryColor: "var(--account-switch-club-primary)", secondaryColor: "var(--account-switch-club-secondary)" },
   { label: "Meus VIPs", iconName: "star", primaryColor: "var(--account-vips-primary)", secondaryColor: "var(--account-vips-secondary)" },
   { label: "Configurações", iconName: "settings", primaryColor: "var(--account-settings-primary)", secondaryColor: "var(--account-settings-secondary)" },
 ];
