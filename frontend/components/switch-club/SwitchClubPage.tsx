@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeftRight, CircleDollarSign, Info, Trophy } from "lucide-react";
+import { ArrowLeftRight, CircleDollarSign, Trophy } from "lucide-react";
 
 import { ClubBadge } from "@/components/layout/ClubBadge";
 import { PanelCard } from "@/components/layout/PanelCard";
@@ -12,6 +12,7 @@ import {
 } from "@/components/switch-club/switch-club-data";
 import { Button } from "@/components/ui/Button";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { InfoBox } from "@/components/ui/InfoBox";
 import { Select } from "@/components/ui/Select";
 
 export function SwitchClubPage() {
@@ -78,13 +79,10 @@ export function SwitchClubPage() {
               </div>
 
               <div className="mt-7 flex gap-3">
-                <div className="flex flex-1 items-center gap-6 rounded-[18px] border border-[var(--homepage-highlight-border)] bg-[linear-gradient(180deg,var(--homepage-highlight-start)_0%,var(--homepage-highlight-end)_100%)] p-4 text-sm font-semibold leading-relaxed text-[var(--homepage-panel-text)]">
-                  <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--homepage-highlight-label)]" />
-                  <p className="text-base">
-                    Depois de confirmar, você passa a defender o novo clube imediatamente e
-                    1 Passe de Transferência será removido do seu inventário.
-                  </p>
-                </div>
+                <InfoBox>
+                  Depois de confirmar, você passa a defender o novo clube imediatamente e
+                  1 Passe de Transferência será removido do seu inventário.
+                </InfoBox>
 
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-center gap-2.5 rounded-[22px] border border-[var(--homepage-vip-border)] bg-[linear-gradient(180deg,var(--homepage-vip-start)_0%,var(--homepage-vip-end)_100%)] p-2 shadow-[0_10px_24px_var(--homepage-vip-shadow)]">
