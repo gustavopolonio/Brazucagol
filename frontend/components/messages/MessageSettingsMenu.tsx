@@ -8,9 +8,13 @@ import { cn } from "@/lib/cn";
 import { Switch } from "@/components/ui/Switch";
 
 export function MessageSettingsMenu({
+  isFloatingChatEnabled,
+  onFloatingChatEnabledChange,
   onShowBackgroundChange,
   showBackground,
 }: Readonly<{
+  isFloatingChatEnabled: boolean;
+  onFloatingChatEnabledChange: (isFloatingChatEnabled: boolean) => void;
   onShowBackgroundChange: (showBackground: boolean) => void;
   showBackground: boolean;
 }>) {
@@ -69,20 +73,38 @@ export function MessageSettingsMenu({
             </p>
           </div>
 
-          <div className="flex items-center justify-between gap-4 px-4 py-4">
-            <div className="min-w-0">
-              <p className="text-sm font-black text-[var(--homepage-panel-text-strong)]">
-                Fundo do chat
-              </p>
-              <p className="mt-1 text-xs font-semibold text-[var(--homepage-panel-text-muted)]">
-                Mostrar imagem no fundo das conversas.
-              </p>
+          <div className="divide-y divide-[var(--homepage-panel-divider-soft)]">
+            <div className="flex items-center justify-between gap-4 px-4 py-4">
+              <div className="min-w-0">
+                <p className="text-sm font-black text-[var(--homepage-panel-text-strong)]">
+                  Chat flutuante
+                </p>
+                <p className="mt-1 text-xs font-semibold text-[var(--homepage-panel-text-muted)]">
+                  Mostrar conversas no canto inferior direito.
+                </p>
+              </div>
+
+              <Switch
+                checked={isFloatingChatEnabled}
+                onClick={() => onFloatingChatEnabledChange(!isFloatingChatEnabled)}
+              />
             </div>
 
-            <Switch
-              checked={showBackground}
-              onClick={() => onShowBackgroundChange(!showBackground)}
-            />
+            <div className="flex items-center justify-between gap-4 px-4 py-4">
+              <div className="min-w-0">
+                <p className="text-sm font-black text-[var(--homepage-panel-text-strong)]">
+                  Fundo do chat
+                </p>
+                <p className="mt-1 text-xs font-semibold text-[var(--homepage-panel-text-muted)]">
+                  Mostrar imagem no fundo das conversas.
+                </p>
+              </div>
+
+              <Switch
+                checked={showBackground}
+                onClick={() => onShowBackgroundChange(!showBackground)}
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -10,6 +10,7 @@ import { OnlinePlayersCounter } from "@/components/layout/OnlinePlayersCounter";
 import { Pitch } from "@/components/layout/Pitch";
 import { SponsorsCard } from "@/components/layout/SponsorsCard";
 import { TopBar } from "@/components/layout/TopBar";
+import { FloatingMessages } from "@/components/messages/FloatingMessages";
 
 export function GameLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
@@ -37,6 +38,7 @@ export function GameLayout({ children }: Readonly<{ children: ReactNode }>) {
       </section>
 
       <Footer />
+      <FloatingMessages />
     </BackgroundPitch>
   );
 }

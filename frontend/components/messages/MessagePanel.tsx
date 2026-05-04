@@ -5,11 +5,14 @@ import { useMemo, useState, type FormEvent } from "react";
 import { MessageConversation } from "@/components/messages/MessageConversation";
 import { MessageThreadList } from "@/components/messages/MessageThreadList";
 import type { MessageItem, MessageThread } from "@/components/messages/messages-data";
+import { cn } from "@/lib/cn";
 
 export function MessagePanel({
+  layout = "page",
   showChatBackground,
   threads,
 }: Readonly<{
+  layout?: "floating" | "page";
   showChatBackground: boolean;
   threads: MessageThread[];
 }>) {
@@ -64,6 +67,7 @@ export function MessagePanel({
         messages={messages}
         onDraftChange={setDraft}
         onSubmit={handleSubmit}
+        layout={layout}
         showChatBackground={showChatBackground}
         thread={activeThread}
       />
@@ -71,9 +75,15 @@ export function MessagePanel({
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
+    <div
+      className={cn(
+        "grid gap-4",
+        layout === "floating" ? "h-full grid-cols-[132px_1fr] gap-2" : "lg:grid-cols-[240px_1fr]",
+      )}
+    >
       <MessageThreadList
         activeThreadId={activeThread.id}
+        layout={layout}
         onThreadSelect={handleThreadSelect}
         threads={threads}
       />
@@ -82,6 +92,7 @@ export function MessagePanel({
         messages={messages}
         onDraftChange={setDraft}
         onSubmit={handleSubmit}
+        layout={layout}
         showChatBackground={showChatBackground}
         thread={activeThread}
       />

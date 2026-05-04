@@ -10,6 +10,7 @@ import { cn } from "@/lib/cn";
 
 export function MessageConversation({
   draft,
+  layout = "page",
   messages,
   onDraftChange,
   onSubmit,
@@ -17,6 +18,7 @@ export function MessageConversation({
   thread,
 }: Readonly<{
   draft: string;
+  layout?: "floating" | "page";
   messages: MessageItem[];
   onDraftChange: (draft: string) => void;
   onSubmit: Parameters<typeof MessageComposer>[0]["onSubmit"];
@@ -73,12 +75,28 @@ export function MessageConversation({
   }, [messages, thread.id, updateActiveMessageDate]);
 
   return (
-    <section className="flex h-[700px] max-h-[700px] flex-col overflow-hidden rounded-[22px] border border-[var(--homepage-panel-divider)] bg-[linear-gradient(180deg,#ffffff_0%,var(--homepage-panel-surface-subtle)_100%)] shadow-[0_12px_28px_rgba(73,54,20,0.09)]">
-      <header className="flex items-center justify-between gap-4 border-b border-[var(--homepage-panel-divider)] bg-white/90 px-4 py-3">
+    <section
+      className={cn(
+        "flex flex-col overflow-hidden border border-[var(--homepage-panel-divider)] bg-[linear-gradient(180deg,#ffffff_0%,var(--homepage-panel-surface-subtle)_100%)] shadow-[0_12px_28px_rgba(73,54,20,0.09)]",
+        layout === "floating"
+          ? "h-full rounded-[18px]"
+          : "h-[700px] max-h-[700px] rounded-[22px]",
+      )}
+    >
+      <header className={cn(
+        "flex items-center justify-between gap-4 border-b border-[var(--homepage-panel-divider)] bg-white/90",
+        layout === "floating" ? "px-3 py-2" : "px-4 py-3",
+      )}>
         <div className="flex min-w-0 items-center gap-3">
-          <MessageThreadAvatar thread={thread} />
+          <MessageThreadAvatar
+            className={layout === "floating" ? "h-9 w-9" : undefined}
+            thread={thread}
+          />
           <div className="min-w-0">
-            <h2 className="truncate text-base font-black text-[var(--homepage-panel-text-strong)]">
+            <h2 className={cn(
+              "truncate font-black text-[var(--homepage-panel-text-strong)]",
+              layout === "floating" ? "text-sm" : "text-base",
+            )}>
               {thread.title}
             </h2>
             <p className="flex items-center gap-2 truncate text-xs font-bold text-[var(--homepage-panel-text-muted)]">
@@ -90,7 +108,8 @@ export function MessageConversation({
 
       <div
         className={cn(
-          "flex-1 overflow-y-auto p-4",
+          "flex-1 overflow-y-auto",
+          layout === "floating" ? "p-3" : "p-4",
           showChatBackground
             ? "bg-[linear-gradient(180deg,rgba(238,248,208,0.56)_0%,rgba(255,255,255,0.68)_100%),url('/images/chat/background.png')] bg-cover bg-center"
             : "bg-[linear-gradient(180deg,rgba(238,248,208,0.42)_0%,rgba(255,255,255,0.6)_100%)]",
@@ -98,7 +117,7 @@ export function MessageConversation({
         onScroll={updateActiveMessageDate}
         ref={messageListRef}
       >
-        <div className="sticky top-0 z-20 mb-3 flex justify-center pointer-events-none">
+        <div className="pointer-events-none sticky top-0 z-20 mb-3 flex justify-center">
           <span className="rounded-full border border-[var(--homepage-panel-divider)] bg-white px-4 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[var(--homepage-panel-text-muted)] shadow-[0_8px_18px_rgba(73,54,20,0.12)]">
             {activeMessageDateLabel}
           </span>
@@ -147,6 +166,7 @@ export function MessageConversation({
       <MessageComposer
         disabled={isReadOnly}
         draft={draft}
+        layout={layout}
         onDraftChange={onDraftChange}
         onSubmit={onSubmit}
       />

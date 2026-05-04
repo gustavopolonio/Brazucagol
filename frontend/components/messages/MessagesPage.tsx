@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Mail } from "lucide-react";
 
 import { PanelCard } from "@/components/layout/PanelCard";
@@ -13,9 +12,19 @@ import {
   type MessageCategory,
 } from "@/components/messages/messages-data";
 import { Tabs, type TabItem } from "@/components/ui/Tabs";
+import { useMessageSettingsStore } from "@/stores/messageSettingsStore";
 
 export function MessagesPage() {
-  const [showChatBackground, setShowChatBackground] = useState(true);
+  const isFloatingChatEnabled = useMessageSettingsStore(
+    (state) => state.isFloatingChatEnabled,
+  );
+  const setIsFloatingChatEnabled = useMessageSettingsStore(
+    (state) => state.setIsFloatingChatEnabled,
+  );
+  const setShowChatBackground = useMessageSettingsStore(
+    (state) => state.setShowChatBackground,
+  );
+  const showChatBackground = useMessageSettingsStore((state) => state.showChatBackground);
   const tabs: TabItem<MessageCategory>[] = messageCategoryOrder.map((messageCategory) => ({
     content: (
       <MessagePanel
@@ -57,6 +66,8 @@ export function MessagesPage() {
               defaultValue="private"
               headerAction={
                 <MessageSettingsMenu
+                  isFloatingChatEnabled={isFloatingChatEnabled}
+                  onFloatingChatEnabledChange={setIsFloatingChatEnabled}
                   onShowBackgroundChange={setShowChatBackground}
                   showBackground={showChatBackground}
                 />
