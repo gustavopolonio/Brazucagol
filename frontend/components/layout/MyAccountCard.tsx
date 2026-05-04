@@ -17,7 +17,7 @@ const accountOptionIcons = {
 } as const;
 
 const accountOptions: AccountOption[] = [
-  { label: "Mensagens", iconName: "mail", primaryColor: "var(--account-messages-primary)", secondaryColor: "var(--account-messages-secondary)", unreadCount: 12 },
+  { label: "Mensagens", href: "/mensagens", iconName: "mail", primaryColor: "var(--account-messages-primary)", secondaryColor: "var(--account-messages-secondary)", unreadCount: 12 },
   { label: "Perfil", href: "/perfil", iconName: "user", primaryColor: "var(--account-profile-primary)", secondaryColor: "var(--account-profile-secondary)" },
   { label: "Inventário", href: "/inventario", iconName: "backpack", primaryColor: "var(--account-vips-primary)", secondaryColor: "var(--account-vips-secondary)" },
   { label: "Trocar Time", href: "/trocar-time", iconName: "arrow-left-right", primaryColor: "var(--account-switch-club-primary)", secondaryColor: "var(--account-switch-club-secondary)" },
